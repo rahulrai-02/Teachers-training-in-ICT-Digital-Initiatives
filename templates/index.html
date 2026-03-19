@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ICT Training Deployment | NIELIT Ropar</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* --- VIBRANT GEN-ALPHA COLOR PALETTE --- */
+        :root { 
+            --dark: #0f172a; 
+            --darker: #020617;
+            --primary: #6366f1; 
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --accent: #10b981; 
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --warning: #f59e0b; 
+            --bg: #f8fafc; 
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); margin: 0; color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        /* =========================================
+           1. PRECISION HEADER (LOGOS + TEXT INLINE)
+           ========================================= */
+        .official-header { 
+            background: linear-gradient(to right, #ffffff, #f8fafc);
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px 2%; 
+            border-bottom: 3px solid var(--primary); 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+            z-index: 10; 
+            position: relative; 
+            width: 100%;
+        }
+        
+        .header-logo { height: 65px; width: auto; object-fit: contain; flex-shrink: 0; }
+        
+        .header-text-center { 
+            text-align: center; 
+            flex-grow: 1; 
+            padding: 0 10px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            min-width: 0; 
+        }
+        
+        .header-title { color: var(--dark); margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-subtitle { color: var(--text-muted); margin: 4px 0 0 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-collab { color: var(--primary); margin: 2px 0 0 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* =========================================
+           2. TOP NAVIGATION BAR
+           ========================================= */
+        .top-nav-bar {
+            background-color: var(--darker);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 12px 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: inset 0 -2px 0 rgba(255,255,255,0.1);
+        }
+        .top-nav-bar::-webkit-scrollbar { display: none; }
+        .top-nav-bar a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            padding-bottom: 4px;
+            border-bottom: 2px solid transparent;
+        }
+        .top-nav-bar a:hover { color: #ffffff; }
+        .top-nav-bar a.active { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+
+        /* =========================================
+           3. COLORFUL FILTER STRIP
+           ========================================= */
+        .filter-strip { 
+            background: var(--surface); 
+            padding: 15px 4%; 
+            display: flex; 
+            gap: 12px; 
+            justify-content: center; 
+            border-bottom: 1px solid #e2e8f0; 
+            flex-wrap: wrap; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); 
+        }
+        
+        select { 
+            padding: 12px 16px; 
+            border-radius: 12px; 
+            border: 2px solid #e2e8f0; 
+            font-weight: 700; 
+            font-size: 13px; 
+            outline: none; 
+            cursor: pointer; 
+            background: #f8fafc; 
+            color: var(--dark); 
+            flex: 1; 
+            min-width: 150px; 
+            max-width: 250px; 
+            transition: all 0.3s ease; 
+        }
+        select:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 15px var(--primary-glow); }
+
+        /* =========================================
+           4. MAIN DASHBOARD (THE ZEN CARDS)
+           ========================================= */
+        .main-content { padding: 30px 4%; flex-grow: 1; display: grid; gap: 30px; grid-template-columns: 1fr; max-width: 1400px; margin: 0 auto; width: 100%; }
+        
+        .zen-card { 
+            background: var(--surface); 
+            border-radius: 24px; 
+            border: 1px solid rgba(255,255,255,0.5); 
+            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.08); 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            transition: transform 0.3s ease;
+        }
+        .zen-card:hover { transform: translateY(-2px); }
+
+        /* Map Panel & Vibrant Badges */
+        .map-panel { position: relative; height: 55vh; min-height: 450px; border: 4px solid white; }
+        #map { flex-grow: 1; width: 100%; z-index: 1; border-radius: 20px; }
+        
+        .top-badges { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
+        .badge { 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(10px); 
+            color: var(--dark); 
+            padding: 12px 20px; 
+            border-radius: 16px; 
+            text-align: center; 
+            border: 1px solid rgba(255,255,255,0.5); 
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.15); 
+        }
+        .badge.target-badge { background: var(--darker); color: white; border-color: #334155; }
+        .badge span { display: block; font-size: 26px; font-weight: 900; color: var(--primary); text-shadow: 0 2px 10px var(--primary-glow); }
+        .badge.target-badge span { color: #fbbf24; text-shadow: 0 2px 10px rgba(251, 191, 36, 0.4); }
+        .badge label { font-size: 10px; font-weight: 800; color: var(--text-muted); letter-spacing: 1.5px; }
+        .badge.target-badge label { color: #94a3b8; }
+        
+        .district-label { background: transparent; border: none; color: #fff; text-align: center; width: 140px !important; margin-left: -70px !important; line-height: 1.1; }
+
+        /* Charts Panel */
+        .charts-panel { display: grid; grid-template-columns: 1fr; gap: 25px; }
+        .chart-box { padding: 25px; height: 350px; border: 4px solid white; }
+
+        /* Table Panel */
+        .table-panel { padding: 30px; border: 4px solid white; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; align-items: center; justify-content: space-between; }
+        .table-title { margin: 0; font-size: 22px; font-weight: 900; color: var(--dark); letter-spacing: -0.5px; }
+        .table-subtitle { margin: 4px 0 0 0; font-size: 14px; color: var(--primary); font-weight: 700; }
+        
+        .controls-group { display: flex; gap: 12px; flex-grow: 1; justify-content: flex-end; flex-wrap: wrap; }
+        #table-search { padding: 12px 20px; border-radius: 12px; border: 2px solid #e2e8f0; font-weight: 600; outline: none; min-width: 250px; background: #f8fafc; font-size: 14px; transition: all 0.3s ease; }
+        #table-search:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 15px var(--primary-glow); }
+        
+        .btn-export { cursor: pointer; border-radius: 12px; border: none; padding: 12px 20px; font-weight: 800; font-size: 13px; color: white; display: flex; gap: 8px; align-items: center; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-export.csv { background: linear-gradient(135deg, #10b981, #059669); }
+        .btn-export.pdf { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .btn-export:active { transform: translateY(1px); }
+
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 16px; border: 1px solid #f1f5f9; -webkit-overflow-scrolling: touch; box-shadow: inset 0 0 20px rgba(0,0,0,0.02); }
+        table { width: 100%; border-collapse: collapse; background: var(--surface); min-width: 800px; }
+        th, td { padding: 16px 20px; text-align: left; border-bottom: 1px solid #f8fafc; font-size: 14px; }
+        th { background: #f1f5f9; color: var(--text-muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .col-srno { width: 60px; font-weight: 800; color: #94a3b8; text-align: center; } 
+        
+        .status-pill { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #34d399, #10b981); color: white; display: inline-block; box-shadow: 0 2px 10px var(--accent-glow); text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+        .placeholder-box { text-align: center; padding: 80px 20px; color: #94a3b8; }
+        .placeholder-box div { font-size: 50px; margin-bottom: 15px; opacity: 0.5; }
+        .placeholder-box h3 { color: var(--dark); margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
+
+        /* =========================================
+           5. ESSENTIAL FOOTER
+           ========================================= */
+        .site-footer { background-color: var(--darker); color: #94a3b8; padding: 50px 4% 30px 4%; border-top: 4px solid var(--primary); margin-top: auto; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 40px; }
+        
+        .footer-brand h3 { color: white; margin: 0 0 15px 0; font-size: 18px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
+        .footer-brand p { margin: 6px 0; font-size: 14px; line-height: 1.6; color: #cbd5e1; }
+        .footer-brand .highlight { color: #38bdf8; font-weight: 700; }
+        
+        .footer-links h4 { color: white; margin: 0 0 15px 0; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-links ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+        .footer-links a { color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
+        .footer-links a:hover { color: #38bdf8; transform: translateX(5px); }
+        
+        .footer-bottom { max-width: 1200px; margin: 40px auto 0 auto; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; font-size: 13px; font-weight: 600; color: #64748b; letter-spacing: 0.5px; }
+
+        /* =========================================
+           RESPONSIVE BREAKPOINTS
+           ========================================= */
+        
+        @media (min-width: 992px) {
+            .main-content { grid-template-columns: 2fr 1fr; grid-template-rows: auto auto; }
+            .map-panel { grid-column: 1 / 2; grid-row: 1 / 2; height: 100%; min-height: 600px; }
+            .charts-panel { grid-column: 2 / 3; grid-row: 1 / 2; display: flex; flex-direction: column; }
+            .chart-box { height: 50%; flex-grow: 1; }
+            .table-panel { grid-column: 1 / 3; grid-row: 2 / 3; }
+        }
+
+        /* --- MOBILE SPECIFIC --- */
+        @media (max-width: 768px) {
+            .official-header { padding: 10px 2%; }
+            .header-logo { height: 40px; } 
+            .header-text-center { padding: 0 5px; }
+            .header-title { font-size: 10px; font-weight: 900; white-space: normal; line-height: 1.2; }
+            .header-subtitle { font-size: 8px; white-space: normal; line-height: 1.2; margin-top: 2px; }
+            .header-collab { font-size: 7px; margin-top: 2px; }
+            
+            .top-nav-bar { justify-content: flex-start; padding: 12px 15px; gap: 20px; }
+            .top-nav-bar a { font-size: 11px; }
+
+            .filter-strip { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding: 12px 15px; gap: 10px; -webkit-overflow-scrolling: touch; }
+            .filter-strip::-webkit-scrollbar { display: none; }
+            select { flex: 0 0 auto; width: 135px; min-width: auto; padding: 10px 12px; font-size: 12px; border-radius: 10px; }
+
+            .main-content { padding: 15px; gap: 20px; }
+            
+            .map-panel { height: 60vh; min-height: 380px; border-radius: 20px; border-width: 2px; }
+            .top-badges { flex-direction: row; top: 12px; right: 12px; gap: 8px; }
+            .badge { padding: 8px 12px; border-radius: 12px; }
+            .badge span { font-size: 18px; }
+
+            .chart-box { height: 280px; padding: 15px; border-radius: 20px; border-width: 2px; }
+            
+            .table-panel { padding: 15px; border-radius: 20px; border-width: 2px; }
+            .search-row { flex-direction: column; align-items: stretch; gap: 15px; margin-bottom: 20px; }
+            .controls-group { flex-direction: row; gap: 10px; }
+            #table-search { min-width: 100%; width: 100%; padding: 12px; }
+            .btn-export { flex: 1; justify-content: center; padding: 12px; font-size: 11px; }
+
+            th { font-size: 9px; padding: 10px; }
+            td { font-size: 11px; padding: 10px; }
+            .status-pill { padding: 4px 8px; font-size: 9px; }
+
+            .footer-content { flex-direction: column; text-align: center; gap: 30px; }
+            .footer-links ul { align-items: center; }
+            .site-footer { padding: 40px 20px 30px 20px; }
+        }
+
+        @media print {
+            body { background: white; color: black; }
+            .top-nav-bar, .filter-strip, .charts-panel, .site-footer, .controls-group { display: none !important; }
+            .main-content { padding: 0; display: block; }
+            .zen-card { border: none; box-shadow: none; border-radius: 0; }
+            .official-header { border-bottom: 2px solid black; }
+            table { border: 1px solid black; }
+            th, td { border: 1px solid black; padding: 8px; }
+            th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; color: black;}
+            .status-pill { background: transparent !important; color: black; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="official-header">
+        <img src="/static/scert_logo.png" alt="SCERT Punjab" class="header-logo" id="logo-left">
+        <div class="header-text-center">
+            <h1 class="header-title">Teachers training in ICT & Digital Initiatives</h1>
+            <p class="header-subtitle">Two days Training Programme at NIELIT Ropar</p>
+            <p class="header-collab">in collaboration with SCERT Punjab</p>
+        </div>
+        <img src="/static/edu_logo.png" alt="Education Dept" class="header-logo" id="logo-right">
+    </header>
+
+    <nav class="top-nav-bar">
+        <a href="#" class="active">Live Dashboard</a>
+        <a href="#">Course Content</a>
+        <a href="#">Photo Gallery</a>
+        <a href="#">Help & Support</a>
+    </nav>
+
+    <div class="filter-strip">
+        <select id="batch-select" onchange="syncFilters('batch')">
+            <option value="All">🎓 All Batches</option>
+            <option value="09-03-2026">Batch 1</option><option value="10-03-2026">Batch 2</option>
+            <option value="11-03-2026">Batch 3</option><option value="12-03-2026">Batch 4</option>
+            <option value="13-03-2026">Batch 5</option><option value="16-03-2026">Batch 6</option>
+            <option value="17-03-2026">Batch 7</option><option value="18-03-2026">Batch 8</option>
+            <option value="19-03-2026">Batch 9</option><option value="24-03-2026">Batch 10</option>
+            <option value="27-03-2026">Batch 11</option><option value="01-04-2026">Batch 12</option>
+        </select>
+        <select id="date-select" onchange="syncFilters('date')">
+            <option value="All">📅 All Dates</option>
+        </select>
+        <select id="district-select" onchange="syncFilters('district')">
+            <option value="All">🌍 All Districts</option>
+            <option value="AMRITSAR">Amritsar</option><option value="BARNALA">Barnala</option><option value="BATHINDA">Bathinda</option>
+            <option value="FARIDKOT">Faridkot</option><option value="FATEHGARH SAHIB">Fatehgarh Sahib</option><option value="FAZILKA">Fazilka</option>
+            <option value="FEROZEPUR">Ferozepur</option><option value="GURDASPUR">Gurdaspur</option><option value="HOSHIARPUR">Hoshiarpur</option>
+            <option value="JALANDHAR">Jalandhar</option><option value="KAPURTHALA">Kapurthala</option><option value="LUDHIANA">Ludhiana</option>
+            <option value="MALERKOTLA">Malerkotla</option><option value="MANSA">Mansa</option><option value="MOGA">Moga</option>
+            <option value="MOHALI">Mohali</option><option value="MUKTSAR">Muktsar</option><option value="NAWANSHAHR">Nawanshahr</option>
+            <option value="PATHANKOT">Pathankot</option><option value="PATIALA">Patiala</option><option value="RUPNAGAR">Rupnagar</option>
+            <option value="SANGRUR">Sangrur</option><option value="TARN TARAN">Tarn Taran</option>
+        </select>
+    </div>
+
+    <main class="main-content">
+        
+        <div class="zen-card map-panel">
+            <div class="top-badges">
+                <div class="badge"><label>ARRIVED</label><span id="arrived-total">0</span></div>
+                <div class="badge target-badge"><label>TARGET</label><span id="expected-total">0</span></div>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <div class="charts-panel">
+            <div class="zen-card chart-box"><canvas id="pieChart"></canvas></div>
+            <div class="zen-card chart-box"><canvas id="barChart"></canvas></div>
+        </div>
+
+        <div class="zen-card table-panel" id="records-section">
+            <div class="search-row">
+                <div>
+                    <h2 class="table-title" id="district-title">Attendance Records</h2>
+                    <p class="table-subtitle">Select a filter or map region to load data</p>
+                </div>
+                <div class="controls-group">
+                    <input type="text" id="table-search" onkeyup="filterTable()" placeholder="Search Teacher or School...">
+                    <button onclick="exportTableToCSV('deployment_report.csv')" class="btn-export csv">📊 Export CSV</button>
+                    <button onclick="window.print()" class="btn-export pdf">📄 Print PDF</button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <div id="table-container">
+                    <div class="placeholder-box">
+                        <div>👆</div>
+                        <h3>Awaiting Selection</h3>
+                        <p>Select a Batch, Date, or click a District on the Map above.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3>NIELIT Ropar</h3>
+                <p><strong><span class="highlight">Work Based Learning (WBL)</span> Department</strong></p>
+                <p>National Institute of Electronics & Information Technology<br>Ministry of Electronics & IT, Government of India</p>
+            </div>
+            <div class="footer-links">
+                <h4>Essential Links</h4>
+                <ul>
+                    <li><a href="#">▶ Course Modules</a></li>
+                    <li><a href="#">▶ Download Schedule</a></li>
+                    <li><a href="#">▶ Event Gallery</a></li>
+                    <li><a href="https://nielit.gov.in/ropar/" target="_blank">▶ NIELIT Official Portal</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 All rights reserved to WBL DEPARTMENT OF NIELIT ROPAR.
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let hasInteracted = false; 
+        const isMobile = window.innerWidth <= 768;
+
+        // Map setup - Freely panning, strictly NO zooming
+        const map = L.map('map', { 
+            zoomControl: false,        // Hide +/- buttons
+            attributionControl: false,
+            dragging: true,            // Enable free panning/touch dragging
+            touchZoom: false,          // Disable pinch-to-zoom
+            scrollWheelZoom: false,    // Disable mouse wheel zoom
+            doubleClickZoom: false,    // Disable double tap zoom
+            boxZoom: false             // Disable box zoom
+        }).setView([31.1471, 75.3412], 7); 
+
+        let punjabLayer, labelsLayer = L.layerGroup().addTo(map);
+        let charts = {};
+        
+        // Vibrant Chart Palette
+        const palette = ["#6366f1", "#ec4899", "#8b5cf6", "#0ea5e9", "#f43f5e", "#10b981", "#f59e0b", "#84cc16"];
+        let defaultBounds = null, districtBoundsMap = {}; 
+
+        // Mobile Header Fix
+        function arrangeHeader() {
+            const header = document.querySelector('.official-header');
+            const textCenter = document.querySelector('.header-text-center');
+            const logoL = document.getElementById('logo-left');
+            const logoR = document.getElementById('logo-right');
+            
+            // Text remains squarely in between logos, regardless of screen size.
+            // This is handled by CSS flexbox automatically now without needing DOM shuffling!
+        }
+
+        fetch('/api/dates').then(r => r.json()).then(dates => {
+            const select = document.getElementById('date-select');
+            dates.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d; opt.innerText = d;
+                select.appendChild(opt);
+            });
+            loadDashboard(); 
+        });
+
+        function syncFilters(source) {
+            hasInteracted = true; 
+            const batchSel = document.getElementById('batch-select');
+            const dateSel = document.getElementById('date-select');
+
+            if (source === 'batch') {
+                dateSel.value = batchSel.value;
+            } else if (source === 'date') {
+                let found = false;
+                for (let i = 0; i < batchSel.options.length; i++) {
+                    if (batchSel.options[i].value === dateSel.value) {
+                        batchSel.selectedIndex = i;
+                        found = true; break;
+                    }
+                }
+                if (!found) batchSel.value = 'All';
+            }
+            loadDashboard();
+            
+            if(isMobile && document.getElementById('records-section')) {
+                document.getElementById('records-section').scrollIntoView({behavior: 'smooth', block: 'start'});
+            }
+        }
+
+        function resolve(name) {
+            if(!name) return "";
+            let c = name.trim().toLowerCase();
+            if (c.includes("ajit") || c.includes("sas") || c.includes("mohali")) return "MOHALI";
+            if (c.includes("muktsar")) return "MUKTSAR";
+            if (c.includes("rupnagar") || c.includes("ropar")) return "RUPNAGAR";
+            if (c.includes("bhagat") || c.includes("nawanshahr") || c.includes("sbs")) return "NAWANSHAHR";
+            if (c.includes("taran")) return "TARN TARAN";
+            if (c.includes("firozpur") || c.includes("ferozepur")) return "FEROZEPUR";
+            if (c.includes("fatehgarh")) return "FATEHGARH SAHIB";
+            return c.toUpperCase();
+        }
+
+        function loadDashboard() {
+            const date = document.getElementById('date-select').value;
+            const currentDist = document.getElementById('district-select').value; 
+            
+            labelsLayer.clearLayers();
+            if(punjabLayer) map.removeLayer(punjabLayer);
+
+            fetch(`/api/stats?date=${date}`).then(r => r.json()).then(data => {
+                fetch('/static/punjab_districts.geojson').then(r => r.json()).then(geo => {
+                    punjabLayer = L.geoJSON(geo, {
+                        style: (f) => {
+                            const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
+                            const arrived = data.arrived[csvName] || 0;
+                            if (arrived > 0) return { color: "#fff", weight: 1.5, fillColor: palette[csvName.charCodeAt(0) % palette.length], fillOpacity: 0.9 };
+                            return { color: "#fff", weight: 1, fillColor: "#cbd5e1", fillOpacity: 0.3 }; 
+                        },
+                        onEachFeature: (f, l) => {
+                            const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
+                            const csvName = resolve(rawName);
+                            const arrived = data.arrived[csvName] || 0;
+                            districtBoundsMap[csvName] = l.getBounds(); 
+
+                            if (arrived > 0) {
+                                let labelHtml = `
+                                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${rawName}</div>
+                                    <div style="font-size: 16px; font-weight: 900; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${arrived}</div>
+                                `;
+                                L.marker(l.getBounds().getCenter(), { icon: L.divIcon({ className: 'district-label', html: labelHtml }), interactive: false }).addTo(labelsLayer);
+                            }
+
+                            l.on('click', () => { 
+                                hasInteracted = true; 
+                                document.getElementById('district-select').value = csvName; 
+                                map.fitBounds(l.getBounds()); 
+                                showAdmin(csvName);
+                                
+                                if(isMobile && document.getElementById('records-section')) {
+                                    document.getElementById('records-section').scrollIntoView({behavior: 'smooth', block: 'start'});
+                                }
+                            });
+                        }
+                    }).addTo(map);
+                    
+                    document.getElementById('arrived-total').innerText = data.total_arrived;
+                    document.getElementById('expected-total').innerText = data.expected_total;
+                    if (!defaultBounds) defaultBounds = punjabLayer.getBounds();
+                    
+                    if (currentDist !== 'All' && districtBoundsMap[currentDist]) {
+                        map.fitBounds(districtBoundsMap[currentDist]);
+                    } else {
+                        map.fitBounds(defaultBounds);
+                    }
+
+                    updateCharts(data);
+                    showAdmin(currentDist); 
+                });
+            });
+        }
+
+        function showAdmin(name) {
+            if (!hasInteracted) return;
+
+            const date = document.getElementById('date-select').value;
+            const batchVal = document.getElementById('batch-select');
+            
+            let displayTime = date === 'All' ? 'All Dates' : date;
+            if (batchVal.value !== 'All' && batchVal.options[batchVal.selectedIndex]) {
+                displayTime = batchVal.options[batchVal.selectedIndex].text;
+            }
+
+            document.getElementById('district-title').innerText = name === 'All' ? `Records: All Districts` : `Records: ${name}`;
+            document.querySelector('.table-subtitle').innerText = displayTime;
+            
+            fetch(`/api/teachers/${name}?date=${date}`).then(r => r.json()).then(list => {
+                let h = `<table><tr>
+                            <th class="col-srno">#</th>
+                            <th>Teacher Name</th>
+                            <th>School Name</th>
+                            <th>District</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>`;
+                
+                if (list.length === 0) {
+                    h += `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 60px; font-size: 14px;">No arrivals recorded for this selection.</td></tr>`;
+                } else {
+                    list.forEach((t, index) => {
+                        h += `<tr>
+                            <td class="col-srno">${index + 1}</td>
+                            <td><div style="font-weight: 700;">${t['Teacher Name']}</div></td>
+                            <td style="color: #475569; max-width: 250px;">${t['School Name']}</td>
+                            <td style="font-weight: 700; color: var(--primary);">${t['District']}</td>
+                            <td style="color: #475569;">${t['Date']}</td>
+                            <td><span class="status-pill">✅ ARRIVED</span></td>
+                        </tr>`;
+                    });
+                }
+                document.getElementById('table-container').innerHTML = h + `</table>`;
+            });
+        }
+
+        function updateCharts(data) {
+            const labels = Object.keys(data.arrived).filter(l => data.arrived[l] > 0); 
+            const arr = labels.map(l => data.arrived[l]);
+            if(charts.pie) charts.pie.destroy(); if(charts.bar) charts.bar.destroy();
+            
+            const titleFont = { size: isMobile ? 14 : 16, family: 'Inter', weight: '900' };
+
+            charts.pie = new Chart(document.getElementById('pieChart'), { 
+                type: 'doughnut', data: { labels, datasets: [{ data: arr, backgroundColor: palette, borderWidth: 0, hoverOffset: 4 }] }, 
+                options: { 
+                    maintainAspectRatio: false, 
+                    cutout: '70%',
+                    plugins: { 
+                        title: { display: true, text: 'Arrivals Share', font: titleFont, color: '#0f172a', padding: {bottom: 20} }, 
+                        legend: { position: isMobile ? 'bottom' : 'right', labels: { boxWidth: 12, padding: 15, font: { size: 12, family: 'Inter', weight: '600' } } } 
+                    } 
+                } 
+            });
+            
+            // Create gradient for bar chart
+            const ctx = document.getElementById('barChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, '#6366f1');   
+            gradient.addColorStop(1, '#3b82f6');
+
+            charts.bar = new Chart(document.getElementById('barChart'), { 
+                type: 'bar', data: { labels, datasets: [{ label: 'Total Arrived', data: arr, backgroundColor: gradient, borderRadius: 6, borderSkipped: false }] }, 
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        title: { display: true, text: 'District Headcount', font: titleFont, color: '#0f172a', padding: {bottom: 20} }, 
+                        legend: { display: false } 
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter', weight: '600' }, color: '#64748b' } },
+                        y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11, family: 'Inter' }, color: '#94a3b8' } }
+                    }
+                } 
+            });
+        }
+
+        function filterTable() {
+            let input = document.getElementById("table-search").value.toLowerCase();
+            let table = document.querySelector("table");
+            if(!table) return;
+            let rows = table.getElementsByTagName("tr");
+            for (let i = 1; i < rows.length; i++) {
+                rows[i].style.display = rows[i].innerText.toLowerCase().includes(input) ? "" : "none";
+            }
+        }
+
+        function exportTableToCSV(filename) {
+            let csv = [];
+            let rows = document.querySelectorAll("#table-container table tr");
+            if (rows.length <= 1) { alert("No data available to export."); return; }
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].style.display === "none") continue;
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) {
+                    let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").replace(/"/g, '""');
+                    data = data.replace('✅ ARRIVED', 'ARRIVED'); 
+                    row.push('"' + data + '"');
+                }
+                csv.push(row.join(","));
+            }
+            let csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+            let downloadLink = document.createElement("a");
+            downloadLink.download = filename; downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none"; document.body.appendChild(downloadLink);
+            downloadLink.click(); document.body.removeChild(downloadLink);
+        }
+
+        setTimeout(() => map.invalidateSize(), 300);
+    </script>
+</body>
+</html>
