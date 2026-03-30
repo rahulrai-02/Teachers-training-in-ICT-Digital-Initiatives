@@ -170,14 +170,17 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 .fl a:hover{color:#38bdf8}
 .fbot{max-width:1200px;margin:22px auto 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);text-align:center;font-size:11px;color:#475569}
 
-/* ========================================================
-   1000% PERFECTED MOBILE DISPLAY QUERY 
+  /* ========================================================
+   10000000% PERFECTED MOBILE DISPLAY QUERY 
    ======================================================== */
 @media(max-width:768px){ 
-  /* 1. Header Fix: Grid layout to push title below logos */
-  .hdr { display: grid; grid-template-columns: auto auto; justify-content: space-between; padding: 12px 4%; row-gap: 15px; } 
-  .hdr img { height: 45px; } 
-  .hdr-center { grid-column: 1 / -1; text-align: center; padding: 0; }
+  /* 1. Header Fix: Logos top left & right, Title centered below */
+  .hdr { flex-wrap: wrap; padding: 15px 4%; gap: 0; justify-content: space-between; } 
+  #img-logo-left { order: 1; height: 50px; }
+  #img-logo-right { order: 2; height: 50px; }
+  .hdr-center { order: 3; flex: 1 1 100%; margin-top: 18px; padding: 0; text-align: center; }
+  .hdr-center h1 { font-size: 14px; line-height: 1.4; }
+  .hdr-center .sub { font-size: 11px; }
   
   /* 2. Main Spacing */
   .main { padding: 12px 4%; gap: 15px; } 
@@ -186,13 +189,16 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
   .filters { flex-direction: column; padding: 12px 4%; }
   select { max-width: 100%; min-width: 100%; font-size: 14px; padding: 12px; }
   
-  /* 4. Stats Row: Strict 2 columns to prevent awkward wrapping */
+  /* 4. Stats Row: 2 columns, perfectly sized */
   .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .sc { padding: 12px; }
-  .sv { font-size: 22px; }
+  .sc { padding: 14px 12px; }
+  .sv { font-size: 24px; }
   
-  /* 5. Map Sizing */
-  .map-panel { min-height: 400px; } 
+  /* 5. Map Panel Fix: Stack title above badges so it doesn't squish */
+  .map-header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 15px 15px 0; }
+  .map-badges { width: 100%; display: flex; gap: 10px; justify-content: space-between; }
+  .badge { flex: 1; padding: 10px 5px; }
+  .map-panel { min-height: 420px; } 
   #map { min-height: 330px; } 
   
   /* 6. Chart Sizing */
