@@ -11,8 +11,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
-  --primary: {{ theme_color }};
-  --primary-glow: {{ theme_color }}25;
+  --primary: {{ theme_color | default('#2563eb') }};
+  --primary-glow: {{ theme_color | default('#2563eb') }}25;
   --bg: #f1f5f9;
   --accent:#10b981;
   --warning:#f59e0b;
@@ -235,8 +235,8 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 {% endif %}
 
 <header class="hdr">
-  <img src="{{ logo_left | default('/static/scert_logo.png') }}" id="img-logo-left" 
-       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-left').click()" title="Click to Change Logo" {% endif %}>
+  <img src="{{ logo_left | default('https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Logo_of_the_Government_of_Punjab%2C_India.svg/150px-Logo_of_the_Government_of_Punjab%2C_India.svg.png') }}" id="img-logo-left" 
+       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-left').click()" title="Click to Change Logo" {% endif %} alt="SCERT Logo">
        
   <div class="hdr-center">
     <h1 id="live-site-title" {% if is_admin %}contenteditable="true" class="editable"{% endif %}>{{ site_title }}</h1><br>
@@ -244,8 +244,8 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
     <p class="collab" id="live-collab" {% if is_admin %}contenteditable="true" class="editable"{% endif %}>{{ collab_text }}</p>
   </div>
   
-  <img src="{{ logo_right | default('/static/edu_logo.png') }}" id="img-logo-right"
-       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-right').click()" title="Click to Change Logo" {% endif %}>
+  <img src="{{ logo_right | default('https://nielit.gov.in/sites/all/themes/nielit/images/logo.png') }}" id="img-logo-right"
+       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-right').click()" title="Click to Change Logo" {% endif %} alt="NIELIT Logo">
 </header>
 
 <nav class="nav">
@@ -297,7 +297,7 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
       </div>
     </div>
     <div id="map"></div>
-    <button class="btn-reset" id="btn-reset" onclick="resetMap()">View Full State</button>
+    <button class="btn-reset" id="btn-reset" onclick="resetMap()">🌍 View Full State</button>
   </div>
 
   <div class="right-col">
@@ -329,7 +329,7 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
     <div class="tbl-hdr">
       <div><h2 id="tbl-title">All Attendance Records</h2><p id="tbl-sub">Select a filter or map region to load data</p></div>
       <div class="tbl-ctrl">
-        <input type="text" id="search" placeholder="Search teacher, school, UDISE..." oninput="filterTable()">
+        <input type="text" id="search" placeholder="🔍 Search teacher, school, UDISE..." oninput="filterTable()">
         <button class="btn bg" onclick="exportCSV()">📊 Export CSV</button>
         <button class="btn bb" onclick="window.print()">📄 Print</button>
       </div>
@@ -454,8 +454,11 @@ const isMobile = window.innerWidth <= 768;
 const punjabBounds = [[29.30, 73.50], [32.60, 77.00]];
 const map = L.map('map', { zoomControl: !isMobile, attributionControl: false, minZoom: isMobile ? 6 : 7, maxZoom: 10, maxBounds: punjabBounds, maxBoundsViscosity: 1.0, dragging: true, touchZoom: true, scrollWheelZoom: true, doubleClickZoom: true, boxZoom: true }).setView([31.1471, 75.3412], isMobile ? 6 : 7); 
 let punjabLayer, labelsLayer = L.layerGroup().addTo(map); let charts = {};
-const primaryThemeColor = "{{ theme_color | default('#4f46e5') }}";
-const palette = [primaryThemeColor, "#ec4899", "#8b5cf6", "#0ea5e9", "#f43f5e", "#10b981", "#f59e0b", "#84cc16"];
+
+// FIX: Updated color palette to strictly use shades of blue to match user image.
+const palette = ["#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a", "#0369a1", "#0c4a6e"];
+const primaryThemeColor = "{{ theme_color | default('#2563eb') }}";
+
 let defaultBounds = null, districtBoundsMap = {}; 
 
 function resetMap() { document.getElementById('f-district').value = 'All'; loadDashboard(); if(defaultBounds) map.fitBounds(defaultBounds); }
@@ -477,9 +480,11 @@ function loadDashboard() {
                     const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
                     const arrived = data.arrived[csvName] || 0;
                     let cCls = arrived > 0 ? 'clickable-district' : 'non-clickable-district';
-                    if(isIsolated) return csvName === currentDist ? {color:"#fff", weight:2, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.9, className:cCls} : {color:"transparent", weight:0, fillColor:"transparent", fillOpacity:0, opacity:0, className:'non-clickable-district'};
-                    if(arrived > 0) return {color:"#fff", weight:1.5, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.8, className:cCls};
-                    return {color:"#fff", weight:1, fillColor:"#cbd5e1", fillOpacity:0.3, className:cCls}; 
+                    
+                    // Uses the new blue palette array mapping dynamically across districts
+                    if(isIsolated) return csvName === currentDist ? {color:"#fff", weight:2, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls} : {color:"transparent", weight:0, fillColor:"transparent", fillOpacity:0, opacity:0, className:'non-clickable-district'};
+                    if(arrived > 0) return {color:"#fff", weight:1.5, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls};
+                    return {color:"#fff", weight:1.5, fillColor:"#cbd5e1", fillOpacity:0.4, className:cCls}; 
                 },
                 onEachFeature: (f, l) => {
                     const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
@@ -525,7 +530,7 @@ function showAdmin(name, batch) {
 function updateCharts(data) {
     Chart.defaults.font.family = "'{{ font_family | default('DM Sans') }}', sans-serif";
     const distLabels = Object.keys(data.arrived || {}).filter(l => data.arrived[l] > 0); const distArr = distLabels.map(l => data.arrived[l]);
-    if(charts.bar) charts.bar.destroy(); const ctx = document.getElementById('barChart').getContext('2d'); const gradient = ctx.createLinearGradient(0,0,0,300); gradient.addColorStop(0, primaryThemeColor); gradient.addColorStop(1, '#38bdf8');
+    if(charts.bar) charts.bar.destroy(); const ctx = document.getElementById('barChart').getContext('2d'); const gradient = ctx.createLinearGradient(0,0,0,300); gradient.addColorStop(0, primaryThemeColor); gradient.addColorStop(1, '#60a5fa');
     charts.bar = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: distLabels, datasets: [{ data: distArr, backgroundColor: gradient, borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 } } }, y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } } } } });
 
     const gStats = data.gender_stats || {}; document.getElementById('g-male-count').innerText = gStats['Male']||0; document.getElementById('g-female-count').innerText = gStats['Female']||0;
