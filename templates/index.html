@@ -169,7 +169,51 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 .fl a{color:#94a3b8;text-decoration:none;font-size:12px;transition:.2s}
 .fl a:hover{color:#38bdf8}
 .fbot{max-width:1200px;margin:22px auto 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);text-align:center;font-size:11px;color:#475569}
-@media(max-width:768px){ .hdr{padding:8px 2%} .hdr img{height:40px} .main{padding:12px 2%;gap:14px} .map-panel{min-height:380px} #map{min-height:330px} .chart-card{height:250px} .tbl-ctrl{flex-direction:column;align-items:stretch} #search{min-width:100%} .btn{justify-content:center} .fi{grid-template-columns: 1fr; text-align: center;} .fl ul{align-items:center} }
+
+/* ========================================================
+   1000% PERFECTED MOBILE DISPLAY QUERY 
+   ======================================================== */
+@media(max-width:768px){ 
+  /* 1. Header Fix: Grid layout to push title below logos */
+  .hdr { display: grid; grid-template-columns: auto auto; justify-content: space-between; padding: 12px 4%; row-gap: 15px; } 
+  .hdr img { height: 45px; } 
+  .hdr-center { grid-column: 1 / -1; text-align: center; padding: 0; }
+  
+  /* 2. Main Spacing */
+  .main { padding: 12px 4%; gap: 15px; } 
+  
+  /* 3. Filters: Stack dropdowns full width for easy tapping */
+  .filters { flex-direction: column; padding: 12px 4%; }
+  select { max-width: 100%; min-width: 100%; font-size: 14px; padding: 12px; }
+  
+  /* 4. Stats Row: Strict 2 columns to prevent awkward wrapping */
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .sc { padding: 12px; }
+  .sv { font-size: 22px; }
+  
+  /* 5. Map Sizing */
+  .map-panel { min-height: 400px; } 
+  #map { min-height: 330px; } 
+  
+  /* 6. Chart Sizing */
+  .chart-card { height: 320px; padding: 14px; } 
+  .avatar-box { padding: 8px; }
+  
+  /* 7. Table Controls: Stack title, full-width search, 50/50 buttons */
+  .tbl-hdr { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px; }
+  .tbl-ctrl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #search { grid-column: 1 / -1; min-width: 100%; padding: 10px; font-size: 14px; }
+  .btn { justify-content: center; padding: 10px; }
+  
+  /* 8. Admin God Dock: Allow wrapping so buttons don't overflow screen */
+  .god-dock { width: 92%; max-width: 400px; flex-wrap: wrap; justify-content: center; padding: 10px 15px; border-radius: 20px; bottom: 10px; gap: 8px; }
+  .god-dock > span, .god-dock > label { width: 100%; text-align: center; margin-bottom: 5px; justify-content: center; }
+  .gd-btn { flex: 1 1 calc(33% - 10px); padding: 8px; font-size: 11px; justify-content: center; }
+  
+  /* 9. Footer */
+  .fi { grid-template-columns: 1fr; text-align: center; } 
+  .fl ul { align-items: center; } 
+}
 </style>
 </head>
 <body>
