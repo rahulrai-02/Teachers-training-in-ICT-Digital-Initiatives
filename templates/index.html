@@ -1,645 +1,494 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ICT Training Deployment | NIELIT Ropar</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <style>
-        /* --- VIBRANT GEN-ALPHA COLOR PALETTE --- */
-        :root { 
-            --dark: #0f172a; 
-            --darker: #020617;
-            --primary: #6366f1; 
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --accent: #10b981; 
-            --accent-glow: rgba(16, 185, 129, 0.4);
-            --warning: #f59e0b; 
-            --bg: #f8fafc; 
-            --surface: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-        }
-        
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); margin: 0; color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; -webkit-font-smoothing: antialiased; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>{{ site_title }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --primary: {{ theme_color }};
+  --primary-glow: {{ theme_color }}25;
+  --bg: #f1f5f9;
+  --accent:#10b981;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --dark:#0f172a;
+  --darker:#020617;
+  --surface:#ffffff;
+  --surface2:#f8fafc;
+  --border:#e2e8f0;
+  --text:#0f172a;
+  --muted:#64748b;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
-        /* =========================================
-           1. PRECISION HEADER (LOGOS + TEXT INLINE)
-           ========================================= */
-        .official-header { 
-            background: linear-gradient(to right, #ffffff, #f8fafc);
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 12px 2%; 
-            border-bottom: 3px solid var(--primary); 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
-            z-index: 10; 
-            position: relative; 
-            width: 100%;
-        }
-        
-        .header-logo { height: 65px; width: auto; object-fit: contain; flex-shrink: 0; }
-        
-        .header-text-center { 
-            text-align: center; 
-            flex-grow: 1; 
-            padding: 0 10px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            min-width: 0; 
-        }
-        
-        .header-title { color: var(--dark); margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .header-subtitle { color: var(--text-muted); margin: 4px 0 0 0; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .header-collab { color: var(--primary); margin: 2px 0 0 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+/* Only apply anti-copy if NOT admin */
+{% if not is_admin %}
+body{ -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+{% endif %}
 
-        /* =========================================
-           2. TOP NAVIGATION BAR
-           ========================================= */
-        .top-nav-bar {
-            background-color: var(--darker);
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            padding: 12px 20px;
-            overflow-x: auto;
-            white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            box-shadow: inset 0 -2px 0 rgba(255,255,255,0.1);
-        }
-        .top-nav-bar::-webkit-scrollbar { display: none; }
-        .top-nav-bar a {
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            padding-bottom: 4px;
-            border-bottom: 2px solid transparent;
-        }
-        .top-nav-bar a:hover { color: #ffffff; }
-        .top-nav-bar a.active { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
 
-        /* =========================================
-           3. COLORFUL FILTER STRIP
-           ========================================= */
-        .filter-strip { 
-            background: var(--surface); 
-            padding: 15px 4%; 
-            display: flex; 
-            gap: 12px; 
-            justify-content: center; 
-            border-bottom: 1px solid #e2e8f0; 
-            flex-wrap: wrap; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); 
-        }
-        
-        select { 
-            padding: 12px 16px; 
-            border-radius: 12px; 
-            border: 2px solid #e2e8f0; 
-            font-weight: 700; 
-            font-size: 13px; 
-            outline: none; 
-            cursor: pointer; 
-            background: #f8fafc; 
-            color: var(--dark); 
-            flex: 1; 
-            min-width: 150px; 
-            max-width: 250px; 
-            transition: all 0.3s ease; 
-        }
-        select:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 15px var(--primary-glow); }
+/* --- GOD MODE (LIVE EDITING) STYLES --- */
+{% if is_admin %}
+  .editable { border: 1px dashed transparent; transition: 0.2s; padding: 2px 4px; border-radius: 4px; outline: none; }
+  .editable:hover { border-color: var(--primary); background: rgba(79,70,229,0.05); cursor: text; }
+  .editable:focus { border-color: var(--primary); background: rgba(79,70,229,0.1); }
+  
+  .editable-img { cursor: pointer; transition: 0.2s; border: 2px dashed transparent; border-radius: 8px; padding: 4px; }
+  .editable-img:hover { border-color: var(--primary); opacity: 0.8; }
+  .editable-img::after { content: "Click to Change"; position: absolute; }
 
-        /* =========================================
-           4. MAIN DASHBOARD (THE ZEN CARDS)
-           ========================================= */
-        .main-content { padding: 30px 4%; flex-grow: 1; display: grid; gap: 30px; grid-template-columns: 1fr; max-width: 1400px; margin: 0 auto; width: 100%; }
-        
-        .zen-card { 
-            background: var(--surface); 
-            border-radius: 24px; 
-            border: 1px solid rgba(255,255,255,0.5); 
-            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.08); 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            transition: transform 0.3s ease;
-        }
-        .zen-card:hover { transform: translateY(-2px); }
+  /* Make Map Resizable by Admin */
+  .map-panel { resize: vertical; overflow: auto; padding-bottom: 10px;}
 
-        /* Map Panel & Vibrant Badges */
-        .map-panel { position: relative; height: 55vh; min-height: 450px; border: 4px solid white; }
-        #map { flex-grow: 1; width: 100%; z-index: 1; border-radius: 20px; }
-        
-        .top-badges { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        .badge { 
-            background: rgba(255,255,255,0.95); 
-            backdrop-filter: blur(10px); 
-            color: var(--dark); 
-            padding: 12px 20px; 
-            border-radius: 16px; 
-            text-align: center; 
-            border: 1px solid rgba(255,255,255,0.5); 
-            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.15); 
-        }
-        .badge.target-badge { background: var(--darker); color: white; border-color: #334155; }
-        .badge span { display: block; font-size: 26px; font-weight: 900; color: var(--primary); text-shadow: 0 2px 10px var(--primary-glow); }
-        .badge.target-badge span { color: #fbbf24; text-shadow: 0 2px 10px rgba(251, 191, 36, 0.4); }
-        .badge label { font-size: 10px; font-weight: 800; color: var(--text-muted); letter-spacing: 1.5px; }
-        .badge.target-badge label { color: #94a3b8; }
-        
-        .district-label { background: transparent; border: none; color: #fff; text-align: center; width: 140px !important; margin-left: -70px !important; line-height: 1.1; }
+  /* Floating Admin Dock */
+  .god-dock { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 50px; display: flex; gap: 15px; align-items: center; z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
+  .gd-btn { background: #1e293b; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-family: inherit; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+  .gd-btn:hover { background: var(--primary); }
+  .gd-save { background: #10b981; } .gd-save:hover { background: #059669; }
+  .gd-danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; } .gd-danger:hover { background: #ef4444; color: white; }
+{% endif %}
 
-        /* Charts Panel */
-        .charts-panel { display: grid; grid-template-columns: 1fr; gap: 25px; }
-        .chart-box { padding: 25px; height: 350px; border: 4px solid white; }
 
-        /* Table Panel */
-        .table-panel { padding: 30px; border: 4px solid white; }
-        .search-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; align-items: center; justify-content: space-between; }
-        .table-title { margin: 0; font-size: 22px; font-weight: 900; color: var(--dark); letter-spacing: -0.5px; }
-        .table-subtitle { margin: 4px 0 0 0; font-size: 14px; color: var(--primary); font-weight: 700; }
-        
-        .controls-group { display: flex; gap: 12px; flex-grow: 1; justify-content: flex-end; flex-wrap: wrap; }
-        #table-search { padding: 12px 20px; border-radius: 12px; border: 2px solid #e2e8f0; font-weight: 600; outline: none; min-width: 250px; background: #f8fafc; font-size: 14px; transition: all 0.3s ease; }
-        #table-search:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 15px var(--primary-glow); }
-        
-        .btn-export { cursor: pointer; border-radius: 12px; border: none; padding: 12px 20px; font-weight: 800; font-size: 13px; color: white; display: flex; gap: 8px; align-items: center; transition: all 0.2s ease; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .btn-export.csv { background: linear-gradient(135deg, #10b981, #059669); }
-        .btn-export.pdf { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
-        .btn-export:active { transform: translateY(1px); }
+/* HEADER */
+.hdr{background:#fff;border-bottom:3px solid var(--primary);display:flex;align-items:center;justify-content:space-between;padding:10px 3%;gap:10px;box-shadow:0 2px 20px rgba(0,0,0,.05);position:relative;z-index:50}
+.hdr img{height:62px;width:auto;object-fit:contain;flex-shrink:0;}
+.hdr-center{text-align:center;flex:1;padding:0 12px}
+.hdr-center h1{font-size:clamp(11px,2vw,21px);font-weight:900;color:var(--dark);text-transform:uppercase;letter-spacing:.4px;line-height:1.25; display: inline-block;}
+.hdr-center .sub{font-size:clamp(9px,1.3vw,13px);color:var(--muted);font-weight:600;margin-top:3px; display: inline-block;}
+.hdr-center .collab{font-size:clamp(8px,1vw,11px);color:var(--primary);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-top:2px; display: inline-block;}
 
-        .table-responsive { width: 100%; overflow-x: auto; border-radius: 16px; border: 1px solid #f1f5f9; -webkit-overflow-scrolling: touch; box-shadow: inset 0 0 20px rgba(0,0,0,0.02); }
-        table { width: 100%; border-collapse: collapse; background: var(--surface); min-width: 800px; }
-        th, td { padding: 16px 20px; text-align: left; border-bottom: 1px solid #f8fafc; font-size: 14px; }
-        th { background: #f1f5f9; color: var(--text-muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .col-srno { width: 60px; font-weight: 800; color: #94a3b8; text-align: center; } 
-        
-        .status-pill { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #34d399, #10b981); color: white; display: inline-block; box-shadow: 0 2px 10px var(--accent-glow); text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+/* NAV */
+.nav{background:var(--darker);display:flex;justify-content:center;gap:28px;padding:11px 20px;overflow-x:auto;white-space:nowrap}
+.nav::-webkit-scrollbar{display:none}
+.nav a{color:#94a3b8;text-decoration:none;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding-bottom:3px;border-bottom:2px solid transparent;transition:.2s}
+.nav a:hover{color:#fff}
+.nav a.active{color:var(--primary);border-bottom-color:var(--primary)}
 
-        .placeholder-box { text-align: center; padding: 80px 20px; color: #94a3b8; }
-        .placeholder-box div { font-size: 50px; margin-bottom: 15px; opacity: 0.5; }
-        .placeholder-box h3 { color: var(--dark); margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
+/* FILTERS */
+.filters{background:#fff;padding:12px 3%;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.04)}
+select{padding:9px 13px;border-radius:9px;border:1.5px solid var(--border);font-family:inherit;font-weight:700;font-size:12px;outline:none;cursor:pointer;background:var(--surface2);color:var(--dark);flex:1;min-width:140px;max-width:230px;transition:.2s}
+select:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
 
-        /* =========================================
-           5. ESSENTIAL FOOTER
-           ========================================= */
-        .site-footer { background-color: var(--darker); color: #94a3b8; padding: 50px 4% 30px 4%; border-top: 4px solid var(--primary); margin-top: auto; }
-        .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 40px; }
-        
-        .footer-brand h3 { color: white; margin: 0 0 15px 0; font-size: 18px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
-        .footer-brand p { margin: 6px 0; font-size: 14px; line-height: 1.6; color: #cbd5e1; }
-        .footer-brand .highlight { color: #38bdf8; font-weight: 700; }
-        
-        .footer-links h4 { color: white; margin: 0 0 15px 0; font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .footer-links ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
-        .footer-links a { color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
-        .footer-links a:hover { color: #38bdf8; transform: translateX(5px); }
-        
-        .footer-bottom { max-width: 1200px; margin: 40px auto 0 auto; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center; font-size: 13px; font-weight: 600; color: #64748b; letter-spacing: 0.5px; }
+/* MAIN */
+.main{padding:22px 3%;display:grid;gap:20px;grid-template-columns:1fr;max-width:1500px;margin:0 auto;width:100%;flex:1; margin-bottom: 60px;} /* margin for dock */
+@media(min-width:1024px){
+  .main{grid-template-columns:1.3fr 1fr;grid-template-rows:auto auto auto}
+  .stats-row{grid-column:1/-1}
+  .map-panel{grid-column:1/2;grid-row:2/3}
+  .right-col{grid-column:2/3;grid-row:2/3;display:flex;flex-direction:column;gap:20px}
+  .table-panel{grid-column:1/-1;grid-row:3/4}
+}
 
-        /* =========================================
-           RESPONSIVE BREAKPOINTS
-           ========================================= */
-        
-        @media (min-width: 992px) {
-            .main-content { grid-template-columns: 2fr 1fr; grid-template-rows: auto auto; }
-            .map-panel { grid-column: 1 / 2; grid-row: 1 / 2; height: 100%; min-height: 600px; }
-            .charts-panel { grid-column: 2 / 3; grid-row: 1 / 2; display: flex; flex-direction: column; }
-            .chart-box { height: 50%; flex-grow: 1; }
-            .table-panel { grid-column: 1 / 3; grid-row: 2 / 3; }
-        }
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:13px}
+.sc{background:#fff;border-radius:var(--r);padding:16px 18px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:default}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--cc,var(--primary))}
+.sc:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.07)}
+.sv{font-size:30px;font-weight:900;color:var(--cc,var(--primary));line-height:1;font-family:'DM Mono',monospace}
+.sl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
+.ss{font-size:11px;color:var(--muted);margin-top:2px; font-weight: 500;}
 
-        /* --- MOBILE SPECIFIC --- */
-        @media (max-width: 768px) {
-            .official-header { padding: 10px 2%; }
-            .header-logo { height: 40px; } 
-            .header-text-center { padding: 0 5px; }
-            .header-title { font-size: 10px; font-weight: 900; white-space: normal; line-height: 1.2; }
-            .header-subtitle { font-size: 8px; white-space: normal; line-height: 1.2; margin-top: 2px; }
-            .header-collab { font-size: 7px; margin-top: 2px; }
-            
-            .top-nav-bar { justify-content: flex-start; padding: 12px 15px; gap: 20px; }
-            .top-nav-bar a { font-size: 11px; }
+/* MAP PANEL */
+.map-panel{background:#fff;border-radius:var(--r);border:1px solid var(--border);overflow:hidden;position:relative;min-height:{{ map_height | default('520') }}px; display:flex;flex-direction:column}
+.map-header{padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.panel-title{font-size:14px;font-weight:900;color:var(--dark);text-transform:uppercase;letter-spacing:.5px; display: flex; justify-content: space-between; align-items: center; width: 100%;}
+.map-badges{display:flex;gap:8px;flex-shrink:0}
+.badge{padding:7px 12px;border-radius:9px;text-align:center;border:1px solid var(--border)}
+.badge.arrived{background:#eef2ff;border-color:#c7d2fe}
+.badge.target{background:var(--dark);border-color:var(--dark)}
+.badge span{display:block;font-size:18px;font-weight:900;font-family:'DM Mono',monospace;line-height:1}
+.badge.arrived span{color:var(--primary)}
+.badge.target span{color:#fbbf24}
+.badge label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px}
+.badge.arrived label{color:var(--muted)}
+.badge.target label{color:#94a3b8}
 
-            .filter-strip { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding: 12px 15px; gap: 10px; -webkit-overflow-scrolling: touch; }
-            .filter-strip::-webkit-scrollbar { display: none; }
-            select { flex: 0 0 auto; width: 135px; min-width: auto; padding: 10px 12px; font-size: 12px; border-radius: 10px; }
+#map{flex:1;min-height:440px;z-index:1; background: transparent !important;}
+.leaflet-container { background: transparent !important; }
+path.non-clickable-district { cursor: default !important; }
+path.clickable-district { cursor: pointer !important; }
+.map-tooltip { background: rgba(15, 23, 42, 0.95) !important; border: 1px solid #334155 !important; border-radius: 8px !important; color: white !important; box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important; padding: 10px 14px !important; font-family: inherit !important; text-align: center; pointer-events: none;}
+.leaflet-tooltip-top:before { border-top-color: rgba(15, 23, 42, 0.95) !important; }
+.btn-reset{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:1000;background:var(--darker);color:#fff;border:none;padding:9px 18px;border-radius:20px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.2);display:none;align-items:center;gap:6px;transition:.2s;white-space:nowrap}
+.btn-reset:hover{background:var(--primary);transform:translateX(-50%) translateY(-2px)}
 
-            .main-content { padding: 15px; gap: 20px; }
-            
-            .map-panel { height: 60vh; min-height: 380px; border-radius: 20px; border-width: 2px; }
-            .top-badges { flex-direction: row; top: 12px; right: 12px; gap: 8px; }
-            .badge { padding: 8px 12px; border-radius: 12px; }
-            .badge span { font-size: 18px; }
+/* RIGHT COL & CHART SLIDER */
+.chart-card{background:#fff;border-radius:var(--r);border:1px solid var(--border);padding:18px;display:flex;flex-direction:column;height:280px; position: relative;}
+.chart-card canvas{flex:1;min-height:0}
+.c-slider-wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; margin-top: 10px; }
+.c-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s ease; pointer-events: none; display: flex; flex-direction: column; }
+.c-slide.active { opacity: 1; pointer-events: auto; }
+.slider-dots { display: flex; gap: 6px; }
+.s-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; cursor: pointer; transition: 0.2s; }
+.s-dot.active { background: var(--primary); transform: scale(1.3); }
+.avatar-box { text-align: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; flex: 1;}
+.avatar-box img { width: 50px; height: 50px; margin-bottom: 5px; pointer-events: none;}
+.a-count { font-weight: 900; font-size: 20px; font-family: 'DM Mono', monospace; line-height: 1; margin-bottom: 2px;}
+.a-label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;}
 
-            .chart-box { height: 280px; padding: 15px; border-radius: 20px; border-width: 2px; }
-            
-            .table-panel { padding: 15px; border-radius: 20px; border-width: 2px; }
-            .search-row { flex-direction: column; align-items: stretch; gap: 15px; margin-bottom: 20px; }
-            .controls-group { flex-direction: row; gap: 10px; }
-            #table-search { min-width: 100%; width: 100%; padding: 12px; }
-            .btn-export { flex: 1; justify-content: center; padding: 12px; font-size: 11px; }
+/* TABLE */
+.table-panel{background:#fff;border-radius:var(--r);border:1px solid var(--border);overflow:hidden}
+.tbl-hdr{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.tbl-hdr h2{font-size:18px;font-weight:900;color:var(--dark)}
+.tbl-hdr p{font-size:12px;color:var(--primary);font-weight:600;margin-top:2px}
+.tbl-ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#search{padding:9px 14px;border-radius:9px;border:1.5px solid var(--border);font-family:inherit;font-size:12px;font-weight:500;outline:none;min-width:200px;background:var(--surface2);transition:.2s}
+#search:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+.btn{border:none;border-radius:8px;padding:9px 13px;font-family:inherit;font-weight:700;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.4px;transition:.2s}
+.btn:hover{opacity:.88;transform:translateY(-1px)}
+.bg{background:var(--accent);color:#fff}
+.bb{background:#3b82f6;color:#fff}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:680px;font-size:13px}
+th{background:var(--surface2);color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:12px 14px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle; color: var(--dark); font-weight: 500; white-space: nowrap;}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.t-sno{color:#94a3b8;font-weight:700;font-family:'DM Mono',monospace;font-size:12px;text-align:center;width:40px}
+.t-name{font-weight:800;color:var(--dark); font-size: 14px;}
+.t-desig{color:var(--muted); font-size: 11px; font-weight: 600; margin-top: 2px;}
+.t-sch{color:var(--muted);font-size:12px; white-space: normal; max-width: 250px;}
+.t-udise{font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); background: #f1f5f9; padding: 4px 8px; border-radius: 6px; display: inline-block; letter-spacing: 0.5px;}
 
-            th { font-size: 9px; padding: 10px; }
-            td { font-size: 11px; padding: 10px; }
-            .status-pill { padding: 4px 8px; font-size: 9px; }
-
-            .footer-content { flex-direction: column; text-align: center; gap: 30px; }
-            .footer-links ul { align-items: center; }
-            .site-footer { padding: 40px 20px 30px 20px; }
-        }
-
-        @media print {
-            body { background: white; color: black; }
-            .top-nav-bar, .filter-strip, .charts-panel, .site-footer, .controls-group { display: none !important; }
-            .main-content { padding: 0; display: block; }
-            .zen-card { border: none; box-shadow: none; border-radius: 0; }
-            .official-header { border-bottom: 2px solid black; }
-            table { border: 1px solid black; }
-            th, td { border: 1px solid black; padding: 8px; }
-            th { background: #f0f0f0 !important; -webkit-print-color-adjust: exact; color: black;}
-            .status-pill { background: transparent !important; color: black; box-shadow: none; }
-        }
-    </style>
+/* FOOTER */
+footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3px solid var(--primary);margin-top:auto}
+.fi{max-width:1200px;margin:0 auto;display:grid;grid-template-columns: 1fr 1fr;gap:24px}
+.fb h3{color:#fff;font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.fb p{font-size:12px;color:#cbd5e1;line-height:1.7}
+.fb .hi{color:#38bdf8;font-weight:700}
+.fl h4{color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.fl ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.fl a{color:#94a3b8;text-decoration:none;font-size:12px;transition:.2s}
+.fl a:hover{color:#38bdf8}
+.fbot{max-width:1200px;margin:22px auto 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);text-align:center;font-size:11px;color:#475569}
+@media(max-width:768px){ .hdr{padding:8px 2%} .hdr img{height:40px} .main{padding:12px 2%;gap:14px} .map-panel{min-height:380px} #map{min-height:330px} .chart-card{height:250px} .tbl-ctrl{flex-direction:column;align-items:stretch} #search{min-width:100%} .btn{justify-content:center} .fi{grid-template-columns: 1fr; text-align: center;} .fl ul{align-items:center} }
+</style>
 </head>
 <body>
 
-    <header class="official-header">
-        <img src="/static/scrt_logo.png" alt="SCERT Punjab" class="header-logo" id="logo-left">
-        <div class="header-text-center">
-            <h1 class="header-title">Teachers training in ICT & Digital Initiatives</h1>
-            <p class="header-subtitle">Two days Training Programme at NIELIT Ropar</p>
-            <p class="header-collab">in collaboration with SCERT Punjab</p>
-        </div>
-        <img src="/static/edu_logo.png" alt="Education Dept" class="header-logo" id="logo-right">
-    </header>
+{% if is_admin %}
+<input type="file" id="upload-logo-left" style="display:none;" accept="image/*" onchange="uploadAsset(this, 'logo_left', 'img-logo-left')">
+<input type="file" id="upload-logo-right" style="display:none;" accept="image/*" onchange="uploadAsset(this, 'logo_right', 'img-logo-right')">
+<input type="file" id="upload-csv-db" style="display:none;" accept=".csv" onchange="uploadCSV(this)">
+{% endif %}
 
-    <nav class="top-nav-bar">
-        <a href="#" class="active">Live Dashboard</a>
-        <a href="static/Schedule of Training.pdf"">Course Content</a>
-        <a href="#">Photo Gallery</a>
-        <a href="#">Help & Support</a>
-    </nav>
+<header class="hdr">
+  <img src="{{ logo_left | default('/static/scert_logo.png') }}" id="img-logo-left" 
+       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-left').click()" title="Click to Change Logo" {% endif %}>
+       
+  <div class="hdr-center">
+    <h1 id="live-site-title" {% if is_admin %}contenteditable="true" class="editable"{% endif %}>{{ site_title }}</h1><br>
+    <p class="sub" id="live-sub-title" {% if is_admin %}contenteditable="true" class="editable"{% endif %}>{{ sub_title }}</p><br>
+    <p class="collab" id="live-collab" {% if is_admin %}contenteditable="true" class="editable"{% endif %}>{{ collab_text }}</p>
+  </div>
+  
+  <img src="{{ logo_right | default('/static/edu_logo.png') }}" id="img-logo-right"
+       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-right').click()" title="Click to Change Logo" {% endif %}>
+</header>
 
-    <div class="filter-strip">
-        <select id="batch-select" onchange="syncFilters('batch')">
-            <option value="All">🎓 All Batches</option>
-            <option value="09-03-2026">Batch 1</option><option value="10-03-2026">Batch 2</option>
-            <option value="11-03-2026">Batch 3</option><option value="12-03-2026">Batch 4</option>
-            <option value="13-03-2026">Batch 5</option><option value="16-03-2026">Batch 6</option>
-            <option value="17-03-2026">Batch 7</option><option value="18-03-2026">Batch 8</option>
-            <option value="19-03-2026">Batch 9</option><option value="24-03-2026">Batch 10</option>
-            <option value="27-03-2026">Batch 11</option><option value="01-04-2026">Batch 12</option>
-        </select>
-        <select id="date-select" onchange="syncFilters('date')">
-            <option value="All">📅 All Dates</option>
-        </select>
-        <select id="district-select" onchange="syncFilters('district')">
-            <option value="All">🌍 All Districts</option>
-            <option value="AMRITSAR">Amritsar</option><option value="BARNALA">Barnala</option><option value="BATHINDA">Bathinda</option>
-            <option value="FARIDKOT">Faridkot</option><option value="FATEHGARH SAHIB">Fatehgarh Sahib</option><option value="FAZILKA">Fazilka</option>
-            <option value="FEROZEPUR">Ferozepur</option><option value="GURDASPUR">Gurdaspur</option><option value="HOSHIARPUR">Hoshiarpur</option>
-            <option value="JALANDHAR">Jalandhar</option><option value="KAPURTHALA">Kapurthala</option><option value="LUDHIANA">Ludhiana</option>
-            <option value="MALERKOTLA">Malerkotla</option><option value="MANSA">Mansa</option><option value="MOGA">Moga</option>
-            <option value="MOHALI">Mohali</option><option value="MUKTSAR">Muktsar</option><option value="NAWANSHAHR">Nawanshahr</option>
-            <option value="PATHANKOT">Pathankot</option><option value="PATIALA">Patiala</option><option value="RUPNAGAR">Rupnagar</option>
-            <option value="SANGRUR">Sangrur</option><option value="TARN TARAN">Tarn Taran</option>
-        </select>
+<nav class="nav">
+  <a href="#" class="active">Live Dashboard</a>
+  <a href="static/Schedule of Training.pdf" target="_blank">Course Content</a>
+  <a href="#">Photo Gallery</a>
+  <a href="https://nielit.gov.in/ropar/" target="_blank">NIELIT Portal</a>
+</nav>
+
+<div class="filters">
+  <select id="f-batch" onchange="applyFilters()">
+    <option value="All">🎓 All Batches</option>
+    <option value="Batch 1">Batch 1</option><option value="Batch 2">Batch 2</option><option value="Batch 3">Batch 3</option>
+    <option value="Batch 4">Batch 4</option><option value="Batch 5">Batch 5</option><option value="Batch 6">Batch 6</option>
+    <option value="Batch 7">Batch 7</option><option value="Batch 8">Batch 8</option><option value="Batch 9">Batch 9</option>
+    <option value="Batch 10">Batch 10</option><option value="Batch 11">Batch 11</option><option value="Batch 12">Batch 12</option>
+  </select>
+  <select id="f-district" onchange="applyFilters()">
+    <option value="All">🌍 All Districts</option>
+    <option value="AMRITSAR">Amritsar</option><option value="BARNALA">Barnala</option>
+    <option value="BATHINDA">Bathinda</option><option value="FARIDKOT">Faridkot</option>
+    <option value="FATEHGARH SAHIB">Fatehgarh Sahib</option><option value="FAZILKA">Fazilka</option>
+    <option value="FEROZEPUR">Ferozepur</option><option value="GURDASPUR">Gurdaspur</option>
+    <option value="HOSHIARPUR">Hoshiarpur</option><option value="JALANDHAR">Jalandhar</option>
+    <option value="KAPURTHALA">Kapurthala</option><option value="LUDHIANA">Ludhiana</option>
+    <option value="MALERKOTLA">Malerkotla</option><option value="MANSA">Mansa</option>
+    <option value="MOHALI">Mohali</option><option value="MUKTSAR">Muktsar</option>
+    <option value="NAWANSHAHR">Nawanshahr</option><option value="PATHANKOT">Pathankot</option>
+    <option value="PATIALA">Patiala</option><option value="RUPNAGAR">Rupnagar</option>
+    <option value="SANGRUR">Sangrur</option><option value="TARN TARAN">Tarn Taran</option>
+  </select>
+</div>
+
+<main class="main">
+  <div class="stats-row">
+    <div class="sc" style="--cc:var(--primary)"><div class="sv" id="s-total">0</div><div class="sl">Total Trained</div><div class="ss" id="ss-total">All batches</div></div>
+    <div class="sc" style="--cc:#10b981"><div class="sv" id="s-batches">0</div><div class="sl">Batches</div><div class="ss" id="ss-batches">March – April 2026</div></div>
+    <div class="sc" style="--cc:#f59e0b"><div class="sv" id="s-districts">0</div><div class="sl">Districts</div><div class="ss" id="ss-districts">Across Punjab</div></div>
+    <div class="sc" style="--cc:#ec4899"><div class="sv" id="s-schools">0</div><div class="sl">Schools</div><div class="ss" id="ss-schools">Represented</div></div>
+    <div class="sc" style="--cc:#0ea5e9"><div class="sv" id="s-shown">0</div><div class="sl">Showing</div><div class="ss" id="ss-shown">Total records</div></div>
+  </div>
+
+  <div class="map-panel" id="resizable-map">
+    <div class="map-header">
+      <span class="panel-title">Live Deployment Tracking</span>
+      <div class="map-badges">
+        <div class="badge arrived"><span id="b-arrived">0</span><label>Arrived</label></div>
+        <div class="badge target"><span id="b-target">380</span><label>Target</label></div>
+      </div>
     </div>
+    <div id="map"></div>
+    <button class="btn-reset" id="btn-reset" onclick="resetMap()">🌍 View Full State</button>
+  </div>
 
-    <main class="main-content">
+  <div class="right-col">
+    <div class="chart-card"><div class="panel-title" style="margin-bottom:12px; color: var(--dark);">District Headcount</div><canvas id="barChart"></canvas></div>
+    <div class="chart-card" onmouseenter="pauseChartSlider()" onmouseleave="resumeChartSlider()">
+      <div class="panel-title">
+        <span id="slide-title">Gender Demographics</span>
+        <div class="slider-dots">
+          <span class="s-dot active" onclick="goToChartSlide(0)"></span><span class="s-dot" onclick="goToChartSlide(1)"></span>
+          <span class="s-dot" onclick="goToChartSlide(2)"></span><span class="s-dot" onclick="goToChartSlide(3)"></span>
+        </div>
+      </div>
+      <div class="c-slider-wrap">
+        <div class="c-slide active">
+          <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 10px;">
+            <div class="avatar-box"><img src="https://cdn-icons-png.flaticon.com/512/2922/2922510.png" alt="Male"><div class="a-count" id="g-male-count" style="color: #3b82f6;">0</div><div class="a-label">Male</div></div>
+            <div class="avatar-box"><img src="https://cdn-icons-png.flaticon.com/512/2922/2922561.png" alt="Female"><div class="a-count" id="g-female-count" style="color: #ec4899;">0</div><div class="a-label">Female</div></div>
+          </div>
+          <div style="flex: 1; min-height: 0; position: relative;"><canvas id="genderPie"></canvas></div>
+        </div>
+        <div class="c-slide"><div style="flex: 1; min-height: 0; position: relative; margin-top: 10px;"><canvas id="desigChart"></canvas></div></div>
+        <div class="c-slide"><div style="flex: 1; min-height: 0; position: relative; margin-top: 10px;"><canvas id="targetPie"></canvas></div></div>
+        <div class="c-slide"><div style="display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; padding: 20px;"><div style="font-size: 40px; margin-bottom: 10px;">📈</div><div style="font-size: 16px; font-weight: 800; color: var(--dark); margin-bottom: 5px;">Data Automatically Synced</div><div style="font-size: 12px; color: var(--muted); line-height: 1.6;">These analytics represent the live deployment status of the ICT training module.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-panel" id="table-section">
+    <div class="tbl-hdr">
+      <div><h2 id="tbl-title">All Attendance Records</h2><p id="tbl-sub">Select a filter or map region to load data</p></div>
+      <div class="tbl-ctrl">
+        <input type="text" id="search" placeholder="🔍 Search teacher, school, UDISE..." oninput="filterTable()">
+        <button class="btn bg" onclick="exportCSV()">📊 Export CSV</button>
+        <button class="btn bb" onclick="window.print()">📄 Print</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><div id="table-container"></div></div>
+  </div>
+</main>
+
+<footer>
+  <div class="fi">
+    <div class="fb">
+      <h3>NIELIT Ropar</h3>
+      <p><strong><span class="hi">Work Based Learning (WBL)</span> Department</strong><br>National Institute of Electronics &amp; Information Technology<br>Ministry of Electronics &amp; IT, Government of India</p>
+    </div>
+    <div class="fl">
+      <h4>Quick Links</h4>
+      <ul><li><a href="#">▶ Course Modules</a></li><li><a href="static/Schedule of Training.pdf" target="_blank">▶ Download Schedule</a></li><li><a href="https://nielit.gov.in/ropar/" target="_blank">▶ NIELIT Official Portal</a></li></ul>
+    </div>
+  </div>
+  <div class="fbot"><a href="/admin" style="color: inherit; text-decoration: none; cursor: default;">&copy;</a> 2026 All rights reserved — WBL Department of NIELIT Ropar</div>
+</footer>
+
+{% if is_admin %}
+<div class="god-dock">
+    <span style="color:#38bdf8; font-weight:900; font-size:14px; margin-right:10px;">🛡️ GOD MODE</span>
+    
+    <label style="color:white; font-size:12px; display:flex; align-items:center; gap:5px; cursor:pointer;">
+        Theme: <input type="color" id="live-color" value="{{ theme_color }}" style="border:none; padding:0; width:25px; height:25px; cursor:pointer; background:transparent;">
+    </label>
+    
+    <button class="gd-btn" onclick="document.getElementById('upload-csv-db').click()">📁 Sync CSV</button>
+    <button class="gd-btn gd-save" id="btn-save-edits" onclick="saveLiveEdits()">💾 Save Layout</button>
+    <a href="/admin/logout" class="gd-btn gd-danger" style="text-decoration:none;">X Logout</a>
+</div>
+{% endif %}
+
+<script>
+// --- ANTI-THEFT ---
+{% if not is_admin %}
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'c' || e.key === 'C')) { e.preventDefault(); }
+    if (e.key === 'F12') { e.preventDefault(); }
+});
+{% endif %}
+
+// --- LIVE EDIT JS LOGIC ---
+{% if is_admin %}
+    // Live Color Change Preview
+    document.getElementById('live-color').addEventListener('input', function(e) {
+        document.documentElement.style.setProperty('--primary', e.target.value);
+        document.documentElement.style.setProperty('--primary-glow', e.target.value + '25');
+    });
+
+    // Map Resize Observer (Fixes map rendering when Admin drags the corner)
+    new ResizeObserver(() => { if(map) map.invalidateSize(); }).observe(document.getElementById('resizable-map'));
+
+    // Upload Asset Logic (Images & CSV)
+    function uploadAsset(inputEl, assetKey, imgId) {
+        if(!inputEl.files[0]) return;
+        let formData = new FormData();
+        formData.append('file', inputEl.files[0]);
+        formData.append('asset_key', assetKey);
         
-        <div class="zen-card map-panel">
-            <div class="top-badges">
-                <div class="badge"><label>ARRIVED</label><span id="arrived-total">0</span></div>
-                <div class="badge target-badge"><label>TARGET</label><span id="expected-total">0</span></div>
-            </div>
-            <div id="map"></div>
-        </div>
-
-        <div class="charts-panel">
-            <div class="zen-card chart-box"><canvas id="pieChart"></canvas></div>
-            <div class="zen-card chart-box"><canvas id="barChart"></canvas></div>
-        </div>
-
-        <div class="zen-card table-panel" id="records-section">
-            <div class="search-row">
-                <div>
-                    <h2 class="table-title" id="district-title">Attendance Records</h2>
-                    <p class="table-subtitle">Select a filter or map region to load data</p>
-                </div>
-                <div class="controls-group">
-                    <input type="text" id="table-search" onkeyup="filterTable()" placeholder="Search Teacher or School...">
-                    <button onclick="exportTableToCSV('deployment_report.csv')" class="btn-export csv">📊 Export CSV</button>
-                    <button onclick="window.print()" class="btn-export pdf">📄 Print PDF</button>
-                </div>
-            </div>
-            
-            <div class="table-responsive">
-                <div id="table-container">
-                    <div class="placeholder-box">
-                        <div>👆</div>
-                        <h3>Awaiting Selection</h3>
-                        <p>Select a Batch, Date, or click a District on the Map above.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-brand">
-                <h3>NIELIT Ropar</h3>
-                <p><strong><span class="highlight">Work Based Learning (WBL)</span> Department</strong></p>
-                <p>National Institute of Electronics & Information Technology<br>Ministry of Electronics & IT, Government of India</p>
-            </div>
-            <div class="footer-links">
-                <h4>Essential Links</h4>
-                <ul>
-                    <li><a href="#">▶ Course Modules</a></li>
-                    <li><a href="#">▶ Download Schedule</a></li>
-                    <li><a href="#">▶ Event Gallery</a></li>
-                    <li><a href="https://nielit.gov.in/ropar/" target="_blank">▶ NIELIT Official Portal</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2026 All rights reserved to WBL DEPARTMENT OF NIELIT ROPAR.
-        </div>
-    </footer>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        let hasInteracted = false; 
-        const isMobile = window.innerWidth <= 768;
-
-        // Map setup - Freely panning, strictly NO zooming
-        const map = L.map('map', { 
-            zoomControl: false,        // Hide +/- buttons
-            attributionControl: false,
-            dragging: true,            // Enable free panning/touch dragging
-            touchZoom: false,          // Disable pinch-to-zoom
-            scrollWheelZoom: false,    // Disable mouse wheel zoom
-            doubleClickZoom: false,    // Disable double tap zoom
-            boxZoom: false             // Disable box zoom
-        }).setView([31.1471, 75.3412], 7); 
-
-        let punjabLayer, labelsLayer = L.layerGroup().addTo(map);
-        let charts = {};
-        
-        // Vibrant Chart Palette
-        const palette = ["#6366f1", "#ec4899", "#8b5cf6", "#0ea5e9", "#f43f5e", "#10b981", "#f59e0b", "#84cc16"];
-        let defaultBounds = null, districtBoundsMap = {}; 
-
-        // Mobile Header Fix
-        function arrangeHeader() {
-            const header = document.querySelector('.official-header');
-            const textCenter = document.querySelector('.header-text-center');
-            const logoL = document.getElementById('logo-left');
-            const logoR = document.getElementById('logo-right');
-            
-            // Text remains squarely in between logos, regardless of screen size.
-            // This is handled by CSS flexbox automatically now without needing DOM shuffling!
-        }
-
-        fetch('/api/dates').then(r => r.json()).then(dates => {
-            const select = document.getElementById('date-select');
-            dates.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d; opt.innerText = d;
-                select.appendChild(opt);
-            });
-            loadDashboard(); 
+        fetch('/api/upload_asset', { method: 'POST', body: formData })
+        .then(r => r.json()).then(data => {
+            if(data.success) document.getElementById(imgId).src = data.url;
         });
+    }
 
-        function syncFilters(source) {
-            hasInteracted = true; 
-            const batchSel = document.getElementById('batch-select');
-            const dateSel = document.getElementById('date-select');
+    function uploadCSV(inputEl) {
+        if(!inputEl.files[0]) return;
+        let formData = new FormData();
+        formData.append('file', inputEl.files[0]);
+        document.getElementById('btn-save-edits').innerText = "⏳ Syncing...";
+        fetch('/api/upload_csv', { method: 'POST', body: formData })
+        .then(r => r.json()).then(data => {
+            if(data.success) { document.getElementById('btn-save-edits').innerText = "✅ Synced!"; setTimeout(() => { document.getElementById('btn-save-edits').innerText = "💾 Save Layout"; loadDashboard(); }, 2000); }
+        });
+    }
 
-            if (source === 'batch') {
-                dateSel.value = batchSel.value;
-            } else if (source === 'date') {
-                let found = false;
-                for (let i = 0; i < batchSel.options.length; i++) {
-                    if (batchSel.options[i].value === dateSel.value) {
-                        batchSel.selectedIndex = i;
-                        found = true; break;
-                    }
+    // Save All Text & Size Changes to Backend
+    function saveLiveEdits() {
+        let btn = document.getElementById('btn-save-edits');
+        btn.innerText = "⏳ Saving...";
+        
+        let payload = {
+            site_title: document.getElementById('live-site-title').innerText,
+            sub_title: document.getElementById('live-sub-title').innerText,
+            collab_text: document.getElementById('live-collab').innerText,
+            theme_color: document.getElementById('live-color').value,
+            map_height: document.getElementById('resizable-map').offsetHeight
+        };
+
+        fetch('/api/save_live_edits', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json()).then(data => {
+            if(data.success) {
+                btn.innerText = "✅ Saved!";
+                setTimeout(() => btn.innerText = "💾 Save Layout", 2000);
+            }
+        });
+    }
+{% endif %}
+
+
+// --- CHART SLIDER LOGIC ---
+let currentChartSlide = 0; let chartSlideInterval;
+const cSlides = document.querySelectorAll('.c-slide'); const cDots = document.querySelectorAll('.s-dot');
+const cTitles = ["Gender Demographics", "Top Designations", "Target vs Achieved", "Data Summary"];
+function goToChartSlide(i) { cSlides[currentChartSlide].classList.remove('active'); cDots[currentChartSlide].classList.remove('active'); currentChartSlide = i; cSlides[currentChartSlide].classList.add('active'); cDots[currentChartSlide].classList.add('active'); document.getElementById('slide-title').innerText = cTitles[currentChartSlide]; }
+function nextChartSlide() { goToChartSlide((currentChartSlide + 1) % cSlides.length); }
+function startChartSlider() { chartSlideInterval = setInterval(nextChartSlide, 5000); }
+function pauseChartSlider() { clearInterval(chartSlideInterval); }
+function resumeChartSlider() { startChartSlider(); }
+startChartSlider(); 
+
+// --- MAP LOGIC ---
+const isMobile = window.innerWidth <= 768;
+const punjabBounds = [[29.30, 73.50], [32.60, 77.00]];
+const map = L.map('map', { zoomControl: !isMobile, attributionControl: false, minZoom: isMobile ? 6 : 7, maxZoom: 10, maxBounds: punjabBounds, maxBoundsViscosity: 1.0, dragging: true, touchZoom: true, scrollWheelZoom: true, doubleClickZoom: true, boxZoom: true }).setView([31.1471, 75.3412], isMobile ? 6 : 7); 
+let punjabLayer, labelsLayer = L.layerGroup().addTo(map); let charts = {};
+const primaryThemeColor = "{{ theme_color | default('#4f46e5') }}";
+const palette = [primaryThemeColor, "#ec4899", "#8b5cf6", "#0ea5e9", "#f43f5e", "#10b981", "#f59e0b", "#84cc16"];
+let defaultBounds = null, districtBoundsMap = {}; 
+
+function resetMap() { document.getElementById('f-district').value = 'All'; loadDashboard(); if(defaultBounds) map.fitBounds(defaultBounds); }
+function applyFilters() { const dist = document.getElementById('f-district').value; loadDashboard(); if(isMobile && dist !== 'All') document.getElementById('table-section').scrollIntoView({behavior: 'smooth', block: 'start'}); }
+function resolve(n) { if(!n) return ""; let c = n.trim().toLowerCase(); if(c.includes("sas")||c.includes("mohali")) return "MOHALI"; if(c.includes("muktsar")) return "MUKTSAR"; if(c.includes("rupnagar")||c.includes("ropar")) return "RUPNAGAR"; if(c.includes("bhagat")||c.includes("nawanshahr")) return "NAWANSHAHR"; if(c.includes("taran")) return "TARN TARAN"; if(c.includes("firozpur")||c.includes("ferozepur")) return "FEROZEPUR"; if(c.includes("fatehgarh")) return "FATEHGARH SAHIB"; return c.toUpperCase(); }
+
+function loadDashboard() {
+    const batch = document.getElementById('f-batch').value;
+    const currentDist = document.getElementById('f-district').value; 
+    const isIsolated = currentDist !== 'All';
+    labelsLayer.clearLayers(); if(punjabLayer) map.removeLayer(punjabLayer);
+    const resetBtn = document.getElementById('btn-reset'); if(resetBtn) resetBtn.style.display = isIsolated ? 'flex' : 'none';
+
+    fetch(`/api/stats?batch=${batch}`).then(r => r.json()).catch(()=>({arrived:{}, total_arrived:0, expected_total:380})).then(data => {
+        document.getElementById('b-target').innerText = data.expected_total;
+        fetch('/static/punjab_districts.geojson').then(r => r.json()).then(geo => {
+            punjabLayer = L.geoJSON(geo, {
+                style: (f) => {
+                    const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
+                    const arrived = data.arrived[csvName] || 0;
+                    let cCls = arrived > 0 ? 'clickable-district' : 'non-clickable-district';
+                    if(isIsolated) return csvName === currentDist ? {color:"#fff", weight:2, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.9, className:cCls} : {color:"transparent", weight:0, fillColor:"transparent", fillOpacity:0, opacity:0, className:'non-clickable-district'};
+                    if(arrived > 0) return {color:"#fff", weight:1.5, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.8, className:cCls};
+                    return {color:"#fff", weight:1, fillColor:"#cbd5e1", fillOpacity:0.3, className:cCls}; 
+                },
+                onEachFeature: (f, l) => {
+                    const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
+                    const csvName = resolve(rawName); const arrived = data.arrived[csvName] || 0;
+                    districtBoundsMap[csvName] = l.getBounds(); 
+                    if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${arrived} Arrived</div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
+                    if(arrived > 0) l.on('click', () => { document.getElementById('f-district').value = csvName; applyFilters(); setTimeout(()=>map.fitBounds(districtBoundsMap[csvName]), 50); });
                 }
-                if (!found) batchSel.value = 'All';
-            }
-            loadDashboard();
-            
-            if(isMobile && document.getElementById('records-section')) {
-                document.getElementById('records-section').scrollIntoView({behavior: 'smooth', block: 'start'});
-            }
-        }
+            }).addTo(map);
+            document.getElementById('b-arrived').innerText = data.total_arrived || 0;
+            document.getElementById('s-total').innerText = data.total_arrived || 0;
+            if(!defaultBounds) defaultBounds = punjabLayer.getBounds();
+            if(isIsolated && districtBoundsMap[currentDist]) map.fitBounds(districtBoundsMap[currentDist]);
+            else if(batch === 'All') map.fitBounds(defaultBounds);
+            updateCharts(data); showAdmin(currentDist, batch); 
+        });
+    });
+}
 
-        function resolve(name) {
-            if(!name) return "";
-            let c = name.trim().toLowerCase();
-            if (c.includes("ajit") || c.includes("sas") || c.includes("mohali")) return "MOHALI";
-            if (c.includes("muktsar")) return "MUKTSAR";
-            if (c.includes("rupnagar") || c.includes("ropar")) return "RUPNAGAR";
-            if (c.includes("bhagat") || c.includes("nawanshahr") || c.includes("sbs")) return "NAWANSHAHR";
-            if (c.includes("taran")) return "TARN TARAN";
-            if (c.includes("firozpur") || c.includes("ferozepur")) return "FEROZEPUR";
-            if (c.includes("fatehgarh")) return "FATEHGARH SAHIB";
-            return c.toUpperCase();
-        }
-
-        function loadDashboard() {
-            const date = document.getElementById('date-select').value;
-            const currentDist = document.getElementById('district-select').value; 
-            
-            labelsLayer.clearLayers();
-            if(punjabLayer) map.removeLayer(punjabLayer);
-
-            fetch(`/api/stats?date=${date}`).then(r => r.json()).then(data => {
-                fetch('/static/punjab_districts.geojson').then(r => r.json()).then(geo => {
-                    punjabLayer = L.geoJSON(geo, {
-                        style: (f) => {
-                            const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
-                            const arrived = data.arrived[csvName] || 0;
-                            if (arrived > 0) return { color: "#fff", weight: 1.5, fillColor: palette[csvName.charCodeAt(0) % palette.length], fillOpacity: 0.9 };
-                            return { color: "#fff", weight: 1, fillColor: "#cbd5e1", fillOpacity: 0.3 }; 
-                        },
-                        onEachFeature: (f, l) => {
-                            const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
-                            const csvName = resolve(rawName);
-                            const arrived = data.arrived[csvName] || 0;
-                            districtBoundsMap[csvName] = l.getBounds(); 
-
-                            if (arrived > 0) {
-                                let labelHtml = `
-                                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${rawName}</div>
-                                    <div style="font-size: 16px; font-weight: 900; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">${arrived}</div>
-                                `;
-                                L.marker(l.getBounds().getCenter(), { icon: L.divIcon({ className: 'district-label', html: labelHtml }), interactive: false }).addTo(labelsLayer);
-                            }
-
-                            l.on('click', () => { 
-                                hasInteracted = true; 
-                                document.getElementById('district-select').value = csvName; 
-                                map.fitBounds(l.getBounds()); 
-                                showAdmin(csvName);
-                                
-                                if(isMobile && document.getElementById('records-section')) {
-                                    document.getElementById('records-section').scrollIntoView({behavior: 'smooth', block: 'start'});
-                                }
-                            });
-                        }
-                    }).addTo(map);
-                    
-                    document.getElementById('arrived-total').innerText = data.total_arrived;
-                    document.getElementById('expected-total').innerText = data.expected_total;
-                    if (!defaultBounds) defaultBounds = punjabLayer.getBounds();
-                    
-                    if (currentDist !== 'All' && districtBoundsMap[currentDist]) {
-                        map.fitBounds(districtBoundsMap[currentDist]);
-                    } else {
-                        map.fitBounds(defaultBounds);
-                    }
-
-                    updateCharts(data);
-                    showAdmin(currentDist); 
-                });
+function showAdmin(name, batch) {
+    document.getElementById('tbl-title').innerText = name === 'All' ? `All Districts` : `${name} District`;
+    document.getElementById('tbl-sub').innerText = `Filter: ${batch}`;
+    fetch(`/api/teachers/${name}?batch=${batch}`).then(r => r.json()).catch(()=>[]).then(list => {
+        let uSch = new Set(), uDist = new Set(), uBat = new Set();
+        let exK = list.length > 0 ? Object.keys(list[0]).filter(k => !['row_id','Date','District','School Name','Name','Designation','Udise Code','Batch'].includes(k)) : [];
+        let h = `<table><tr><th class="t-sno">#</th><th>Teacher Details</th><th>UDISE Code</th><th>School Name</th><th>District</th><th>Batch</th>`;
+        exK.forEach(k => h+=`<th>${k}</th>`); h+=`</tr>`;
+        if(list.length === 0) h += `<tr><td colspan="${6+exK.length}" style="text-align:center; color:var(--muted); padding:50px;">No arrivals recorded.</td></tr>`;
+        else {
+            list.forEach((t, i) => {
+                const s = t['School Name']||'-', d = t['District']||'-', b = t['Batch']||'-', des = t['Designation']||'', u = t['Udise Code']||'-';
+                if(s!=='-') uSch.add(s); if(d!=='-') uDist.add(d); if(b!=='-') uBat.add(b);
+                h += `<tr><td class="t-sno">${i+1}</td><td><div class="t-name">${t['Name']||'-'}</div>${des ? `<div class="t-desig">${des}</div>`:''}</td><td>${u!=='-'?`<span class="t-udise">${u}</span>`:'-'}</td><td class="t-sch">${s}</td><td style="font-weight:700; color:var(--primary);">${d}</td><td style="color:var(--muted); font-weight:600;">${b}</td>`;
+                exK.forEach(k => h+=`<td>${t[k]||'-'}</td>`); h+=`</tr>`;
             });
         }
+        document.getElementById('table-container').innerHTML = h + `</table>`;
+        document.getElementById('s-shown').innerText = list.length; document.getElementById('s-schools').innerText = uSch.size; document.getElementById('s-districts').innerText = uDist.size; document.getElementById('s-batches').innerText = uBat.size;
+        document.getElementById('ss-total').innerText = batch; document.getElementById('ss-districts').innerText = name==='All'?'Across Punjab':`${name} Only`;
+    });
+}
 
-        function showAdmin(name) {
-            if (!hasInteracted) return;
+function updateCharts(data) {
+    Chart.defaults.font.family = "'{{ font_family | default('DM Sans') }}', sans-serif";
+    const distLabels = Object.keys(data.arrived || {}).filter(l => data.arrived[l] > 0); const distArr = distLabels.map(l => data.arrived[l]);
+    if(charts.bar) charts.bar.destroy(); const ctx = document.getElementById('barChart').getContext('2d'); const gradient = ctx.createLinearGradient(0,0,0,300); gradient.addColorStop(0, primaryThemeColor); gradient.addColorStop(1, '#38bdf8');
+    charts.bar = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: distLabels, datasets: [{ data: distArr, backgroundColor: gradient, borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 } } }, y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } } } } });
 
-            const date = document.getElementById('date-select').value;
-            const batchVal = document.getElementById('batch-select');
-            
-            let displayTime = date === 'All' ? 'All Dates' : date;
-            if (batchVal.value !== 'All' && batchVal.options[batchVal.selectedIndex]) {
-                displayTime = batchVal.options[batchVal.selectedIndex].text;
-            }
+    const gStats = data.gender_stats || {}; document.getElementById('g-male-count').innerText = gStats['Male']||0; document.getElementById('g-female-count').innerText = gStats['Female']||0;
+    if(charts.pie) charts.pie.destroy(); charts.pie = new Chart(document.getElementById('genderPie'), { type: 'doughnut', data: { labels: ['Male','Female','Other'], datasets: [{ data: [gStats['Male'], gStats['Female'], gStats['Not Specified']], backgroundColor: ["#3b82f6", "#ec4899", "#cbd5e1"], borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
 
-            document.getElementById('district-title').innerText = name === 'All' ? `Records: All Districts` : `Records: ${name}`;
-            document.querySelector('.table-subtitle').innerText = displayTime;
-            
-            fetch(`/api/teachers/${name}?date=${date}`).then(r => r.json()).then(list => {
-                let h = `<table><tr>
-                            <th class="col-srno">#</th>
-                            <th>Teacher Name</th>
-                            <th>School Name</th>
-                            <th>District</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>`;
-                
-                if (list.length === 0) {
-                    h += `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 60px; font-size: 14px;">No arrivals recorded for this selection.</td></tr>`;
-                } else {
-                    list.forEach((t, index) => {
-                        h += `<tr>
-                            <td class="col-srno">${index + 1}</td>
-                            <td><div style="font-weight: 700;">${t['Teacher Name']}</div></td>
-                            <td style="color: #475569; max-width: 250px;">${t['School Name']}</td>
-                            <td style="font-weight: 700; color: var(--primary);">${t['District']}</td>
-                            <td style="color: #475569;">${t['Date']}</td>
-                            <td><span class="status-pill">✅ ARRIVED</span></td>
-                        </tr>`;
-                    });
-                }
-                document.getElementById('table-container').innerHTML = h + `</table>`;
-            });
-        }
+    const desigData = data.designation_stats || {}; if(charts.desig) charts.desig.destroy();
+    charts.desig = new Chart(document.getElementById('desigChart'), { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(desigData), datasets: [{ data: Object.values(desigData), backgroundColor: '#10b981', borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } } } });
 
-        function updateCharts(data) {
-            const labels = Object.keys(data.arrived).filter(l => data.arrived[l] > 0); 
-            const arr = labels.map(l => data.arrived[l]);
-            if(charts.pie) charts.pie.destroy(); if(charts.bar) charts.bar.destroy();
-            
-            const titleFont = { size: isMobile ? 14 : 16, family: 'Inter', weight: '900' };
+    if(charts.target) charts.target.destroy(); let expected = data.expected_total || 1, arrived = data.total_arrived || 0, remaining = expected > arrived ? expected - arrived : 0;
+    charts.target = new Chart(document.getElementById('targetPie'), { type: 'doughnut', data: { labels: ['Arrived', 'Remaining'], datasets: [{ data: [arrived, remaining], backgroundColor: [primaryThemeColor, "#f1f5f9"], borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } } });
+}
 
-            charts.pie = new Chart(document.getElementById('pieChart'), { 
-                type: 'doughnut', data: { labels, datasets: [{ data: arr, backgroundColor: palette, borderWidth: 0, hoverOffset: 4 }] }, 
-                options: { 
-                    maintainAspectRatio: false, 
-                    cutout: '70%',
-                    plugins: { 
-                        title: { display: true, text: 'Arrivals Share', font: titleFont, color: '#0f172a', padding: {bottom: 20} }, 
-                        legend: { position: isMobile ? 'bottom' : 'right', labels: { boxWidth: 12, padding: 15, font: { size: 12, family: 'Inter', weight: '600' } } } 
-                    } 
-                } 
-            });
-            
-            // Create gradient for bar chart
-            const ctx = document.getElementById('barChart').getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, '#6366f1');   
-            gradient.addColorStop(1, '#3b82f6');
+function filterTable() { let input = document.getElementById("search").value.toLowerCase(); let rows = document.querySelector("table")?.getElementsByTagName("tr"); if(!rows) return; for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].innerText.toLowerCase().includes(input) ? "" : "none"; }
+function exportCSV() { let csv = []; let rows = document.querySelectorAll("#table-container table tr"); if(rows.length <= 1) return; for(let i=0; i<rows.length; i++) { if(rows[i].style.display === "none") continue; let row = [], cols = rows[i].querySelectorAll("td, th"); for(let j=0; j<cols.length; j++) row.push('"' + cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " - ").replace(/"/g, '""') + '"'); csv.push(row.join(",")); } let blob = new Blob([csv.join("\n")], {type: "text/csv"}); let a = document.createElement("a"); a.download = 'Data.csv'; a.href = URL.createObjectURL(blob); a.click(); }
 
-            charts.bar = new Chart(document.getElementById('barChart'), { 
-                type: 'bar', data: { labels, datasets: [{ label: 'Total Arrived', data: arr, backgroundColor: gradient, borderRadius: 6, borderSkipped: false }] }, 
-                options: { 
-                    maintainAspectRatio: false, 
-                    plugins: { 
-                        title: { display: true, text: 'District Headcount', font: titleFont, color: '#0f172a', padding: {bottom: 20} }, 
-                        legend: { display: false } 
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter', weight: '600' }, color: '#64748b' } },
-                        y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11, family: 'Inter' }, color: '#94a3b8' } }
-                    }
-                } 
-            });
-        }
-
-        function filterTable() {
-            let input = document.getElementById("table-search").value.toLowerCase();
-            let table = document.querySelector("table");
-            if(!table) return;
-            let rows = table.getElementsByTagName("tr");
-            for (let i = 1; i < rows.length; i++) {
-                rows[i].style.display = rows[i].innerText.toLowerCase().includes(input) ? "" : "none";
-            }
-        }
-
-        function exportTableToCSV(filename) {
-            let csv = [];
-            let rows = document.querySelectorAll("#table-container table tr");
-            if (rows.length <= 1) { alert("No data available to export."); return; }
-            for (let i = 0; i < rows.length; i++) {
-                if (rows[i].style.display === "none") continue;
-                let row = [], cols = rows[i].querySelectorAll("td, th");
-                for (let j = 0; j < cols.length; j++) {
-                    let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").replace(/"/g, '""');
-                    data = data.replace('✅ ARRIVED', 'ARRIVED'); 
-                    row.push('"' + data + '"');
-                }
-                csv.push(row.join(","));
-            }
-            let csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
-            let downloadLink = document.createElement("a");
-            downloadLink.download = filename; downloadLink.href = window.URL.createObjectURL(csvFile);
-            downloadLink.style.display = "none"; document.body.appendChild(downloadLink);
-            downloadLink.click(); document.body.removeChild(downloadLink);
-        }
-
-        setTimeout(() => map.invalidateSize(), 300);
-    </script>
+loadDashboard();
+setTimeout(() => map.invalidateSize(), 300);
+</script>
 </body>
 </html>
