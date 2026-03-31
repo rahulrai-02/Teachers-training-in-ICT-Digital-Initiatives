@@ -29,9 +29,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
-/* Standard Anti-copy for viewer mode */
-body{ -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+body{ -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
 
 /* HEADER */
 .hdr{background:#fff;border-bottom:3px solid var(--primary);display:flex;align-items:center;justify-content:space-between;padding:10px 3%;gap:10px;box-shadow:0 2px 20px rgba(0,0,0,.05);position:relative;z-index:50}
@@ -146,9 +144,16 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 .fl a:hover{color:#38bdf8}
 .fbot{max-width:1200px;margin:22px auto 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);text-align:center;font-size:11px;color:#475569}
 
-/* ========================================================
-   PERFECTED MOBILE DISPLAY QUERY 
-   ======================================================== */
+/* FALLBACK OVERLAY */
+#csv-fallback-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(10px); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px; }
+.upload-box { background: #0f172a; padding: 40px; border-radius: 20px; border: 2px dashed #334155; max-width: 500px; }
+.upload-box h2 { color: #38bdf8; margin-bottom: 10px; }
+.upload-box p { color: #94a3b8; font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+.custom-file-upload { display: inline-block; padding: 12px 24px; cursor: pointer; background: var(--primary); color: white; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
+.custom-file-upload:hover { background: #1d4ed8; }
+input[type="file"] { display: none; }
+
+/* MOBILE FIXES */
 @media(max-width:768px){ 
   .hdr { flex-wrap: wrap; padding: 15px 4%; gap: 0; justify-content: space-between; } 
   #img-logo-left { order: 1; height: 50px; }
@@ -156,32 +161,25 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
   .hdr-center { order: 3; flex: 1 1 100%; margin-top: 18px; padding: 0; text-align: center; }
   .hdr-center h1 { font-size: 14px; line-height: 1.4; }
   .hdr-center .sub { font-size: 11px; }
-  
   .nav { flex-wrap: wrap; gap: 10px 15px; white-space: normal; padding: 12px 4%; }
   .nav a { font-size: 11px; padding-bottom: 4px; }
-  
   .main { padding: 12px 4%; gap: 15px; } 
   .filters { flex-direction: column; padding: 12px 4%; }
   select { max-width: 100%; min-width: 100%; font-size: 14px; padding: 12px; }
-  
   .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .sc { padding: 14px 12px; }
   .sv { font-size: 24px; }
-  
   .map-header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 15px 15px 0; }
   .map-badges { width: 100%; display: flex; gap: 10px; justify-content: space-between; }
   .badge { flex: 1; padding: 10px 5px; }
   .map-panel { min-height: 420px; } 
   #map { min-height: 330px; } 
-  
   .chart-card { height: 320px; padding: 14px; } 
   .avatar-box { padding: 8px; }
-  
   .tbl-hdr { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px; }
   .tbl-ctrl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   #search { grid-column: 1 / -1; min-width: 100%; padding: 10px; font-size: 14px; }
   .btn { justify-content: center; padding: 10px; }
-  
   .fi { grid-template-columns: 1fr; text-align: center; } 
   .fl ul { align-items: center; } 
 }
@@ -189,15 +187,24 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 </head>
 <body>
 
+<div id="csv-fallback-overlay">
+  <div class="upload-box">
+    <h2>📂 Local File Access Blocked</h2>
+    <p>Your browser's security settings prevent this dashboard from automatically reading local files. To load the dashboard, please select your <b>present_data.csv</b> file manually.</p>
+    <label class="custom-file-upload">
+      <input type="file" id="manual-csv-upload" accept=".csv">
+      Select present_data.csv
+    </label>
+  </div>
+</div>
+
 <header class="hdr">
   <img src="static/scert_logo.png" id="img-logo-left" alt="SCERT Logo">
-       
   <div class="hdr-center">
     <h1 id="live-site-title">TEACHERS TRAINING IN ICT & DIGITAL INITIATIVES</h1><br>
     <p class="sub" id="live-sub-title">Two Days Training Programme at NIELIT Ropar</p><br>
     <p class="collab" id="live-collab">IN COLLABORATION WITH SCERT PUNJAB</p>
   </div>
-  
   <img src="static/edu_logo.png" id="img-logo-right" alt="NIELIT Logo">
 </header>
 
@@ -335,10 +342,9 @@ const palette = ["#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af
 const primaryThemeColor = "#2563eb";
 let defaultBounds = null, districtBoundsMap = {}; 
 
-// --- NEW DATA FETCHING LOGIC (NO PYTHON NEEDED) ---
-
-// 🔥 PASTE YOUR GITHUB "RAW" URL HERE 🔥
-// Or just leave it as 'present_data.csv' if it's in the same folder
+// =======================================================================
+// CORE DATA ENGINE
+// =======================================================================
 const CSV_URL = 'present_data.csv'; 
 
 const BATCH_TARGETS = { 'Batch 1': 32, 'Batch 2': 32, 'Batch 3': 32, 'Batch 4': 32, 'Batch 5': 32, 'Batch 6': 32, 'Batch 7': 32, 'Batch 8': 32, 'Batch 9': 32, 'Batch 10': 32, 'Batch 11': 32, 'Batch 12': 28 };
@@ -346,33 +352,51 @@ const DISTRICT_MAPPING = { "sas nagar": "MOHALI", "s.a.s nagar": "MOHALI", "moha
 
 let globalTeacherData = [];
 
-// Start the whole app by fetching the CSV
+// Attempt 1: Try fetching the CSV automatically
 Papa.parse(CSV_URL, {
     download: true,
     header: true,
     skipEmptyLines: true,
     complete: function(results) {
-        processCSV(results.data);
-        loadDashboard();
+        if(results.data && results.data.length > 0) {
+            processCSV(results.data);
+            loadDashboard();
+        } else {
+            document.getElementById('csv-fallback-overlay').style.display = 'flex';
+        }
     },
     error: function(err) {
-        console.error("Failed to load CSV:", err);
-        loadDashboard(); // Load with 0s if failed
+        // If local file is blocked by browser security, show the manual upload overlay
+        console.warn("Auto-fetch blocked by browser. Requesting manual file selection.");
+        document.getElementById('csv-fallback-overlay').style.display = 'flex';
+    }
+});
+
+// Attempt 2: Manual File Upload Fallback
+document.getElementById('manual-csv-upload').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                document.getElementById('csv-fallback-overlay').style.display = 'none'; // Hide overlay
+                processCSV(results.data);
+                loadDashboard();
+            }
+        });
     }
 });
 
 function processCSV(data) {
     globalTeacherData = data.map((row, idx) => {
-        let cleanRow = {};
-        for(let key in row) if(key) cleanRow[key.trim().toLowerCase()] = row[key].trim();
-        
-        let dist = cleanRow['district'] || '';
+        let dist = row['District'] || '';
         let mappedDist = DISTRICT_MAPPING[dist.toLowerCase()] || dist.toUpperCase();
         
-        let batch = cleanRow['batch no'] || cleanRow['batch'] || 'Unknown';
+        let batch = row['Batch No'] || row['Batch'] || 'Unknown';
         if(batch.toLowerCase().startsWith('batch')) batch = 'Batch ' + batch.toLowerCase().replace('batch', '').trim();
         
-        let gender = cleanRow['gender'] || '';
+        let gender = row['Gender'] || '';
         let cleanGender = "Not Specified";
         if(['M', 'MALE'].includes(gender.toUpperCase())) cleanGender = "Male";
         if(['F', 'FEMALE'].includes(gender.toUpperCase())) cleanGender = "Female";
@@ -381,10 +405,10 @@ function processCSV(data) {
             row_id: idx,
             Batch: batch,
             District: mappedDist,
-            "School Name": cleanRow['school name'] || cleanRow['school'] || 'N/A',
-            Name: cleanRow['name'] || cleanRow['teacher name'] || 'UNKNOWN',
-            Designation: cleanRow['designation'] || 'TEACHER',
-            "Udise Code": cleanRow['udise code'] || cleanRow['udise'] || 'N/A',
+            "School Name": row['School Name'] || 'N/A',
+            Name: row['Name'] || 'UNKNOWN',
+            Designation: row['Designation'] || 'TEACHER',
+            "Udise Code": row['Udise Code'] || 'N/A',
             Gender: cleanGender
         };
     }).filter(d => d.District);
@@ -401,7 +425,7 @@ function loadDashboard() {
     labelsLayer.clearLayers(); if(punjabLayer) map.removeLayer(punjabLayer);
     const resetBtn = document.getElementById('btn-reset'); if(resetBtn) resetBtn.style.display = isIsolated ? 'flex' : 'none';
 
-    // Calculate Stats from globalTeacherData instead of Python Backend
+    // Calculate Stats from globalTeacherData
     let arrived = {}, total_arrived = 0, gender_stats = {"Male": 0, "Female": 0, "Not Specified": 0}, designation_stats = {};
     
     globalTeacherData.forEach(t => {
@@ -418,13 +442,12 @@ function loadDashboard() {
     let expected_total = batch === 'All' ? Object.values(BATCH_TARGETS).reduce((a,b)=>a+b,0) : (BATCH_TARGETS[batch] || 32);
     document.getElementById('b-target').innerText = expected_total;
     
-    // Sort designations for chart
     let sortedDesig = Object.fromEntries(Object.entries(designation_stats).sort(([,a],[,b]) => b - a).slice(0, 5));
     let statsData = { arrived, total_arrived, expected_total, gender_stats, designation_stats: sortedDesig };
 
     // Fetch GeoJSON and draw map
     fetch('static/punjab_districts.geojson').then(r => r.json()).catch(()=>({features:[]})).then(geo => {
-        if(!geo.features.length) return; // Prevent crash if missing geojson
+        if(!geo.features.length) return;
         punjabLayer = L.geoJSON(geo, {
             style: (f) => {
                 const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
@@ -459,7 +482,6 @@ function showAdmin(name, batch) {
     document.getElementById('tbl-title').innerText = name === 'All' ? `All Districts` : `${name} District`;
     document.getElementById('tbl-sub').innerText = `Filter: ${batch}`;
     
-    // Filter global data for the table
     let list = globalTeacherData.filter(t => {
         let matchBatch = (batch === 'All' || t.Batch === batch);
         let matchDist = (name === 'All' || t.District === name.toUpperCase());
