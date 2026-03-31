@@ -144,15 +144,6 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 .fl a:hover{color:#38bdf8}
 .fbot{max-width:1200px;margin:22px auto 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);text-align:center;font-size:11px;color:#475569}
 
-/* FALLBACK OVERLAY */
-#csv-fallback-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(10px); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px; }
-.upload-box { background: #0f172a; padding: 40px; border-radius: 20px; border: 2px dashed #334155; max-width: 500px; }
-.upload-box h2 { color: #38bdf8; margin-bottom: 10px; }
-.upload-box p { color: #94a3b8; font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
-.custom-file-upload { display: inline-block; padding: 12px 24px; cursor: pointer; background: var(--primary); color: white; border-radius: 8px; font-weight: bold; font-size: 14px; transition: 0.2s; }
-.custom-file-upload:hover { background: #1d4ed8; }
-input[type="file"] { display: none; }
-
 /* MOBILE FIXES */
 @media(max-width:768px){ 
   .hdr { flex-wrap: wrap; padding: 15px 4%; gap: 0; justify-content: space-between; } 
@@ -186,17 +177,6 @@ input[type="file"] { display: none; }
 </style>
 </head>
 <body>
-
-<div id="csv-fallback-overlay">
-  <div class="upload-box">
-    <h2>📂 Local File Access Blocked</h2>
-    <p>Your browser's security settings prevent this dashboard from automatically reading local files. To load the dashboard, please select your <b>present_data.csv</b> file manually.</p>
-    <label class="custom-file-upload">
-      <input type="file" id="manual-csv-upload" accept=".csv">
-      Select present_data.csv
-    </label>
-  </div>
-</div>
 
 <header class="hdr">
   <img src="static/scert_logo.png" id="img-logo-left" alt="SCERT Logo">
@@ -313,14 +293,12 @@ input[type="file"] { display: none; }
 </footer>
 
 <script>
-// --- ANTI-THEFT ---
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('keydown', e => {
     if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'c' || e.key === 'C')) { e.preventDefault(); }
     if (e.key === 'F12') { e.preventDefault(); }
 });
 
-// --- CHART SLIDER LOGIC ---
 let currentChartSlide = 0; let chartSlideInterval;
 const cSlides = document.querySelectorAll('.c-slide'); const cDots = document.querySelectorAll('.s-dot');
 const cTitles = ["Gender Demographics", "Top Designations", "Target vs Achieved", "Data Summary"];
@@ -331,20 +309,18 @@ function pauseChartSlider() { clearInterval(chartSlideInterval); }
 function resumeChartSlider() { startChartSlider(); }
 startChartSlider(); 
 
-// --- MAP LOGIC ---
 const isMobile = window.innerWidth <= 768;
 const punjabBounds = [[29.30, 73.50], [32.60, 77.00]];
 const map = L.map('map', { zoomControl: !isMobile, attributionControl: false, minZoom: isMobile ? 6 : 7, maxZoom: 10, maxBounds: punjabBounds, maxBoundsViscosity: 1.0, dragging: true, touchZoom: true, scrollWheelZoom: true, doubleClickZoom: true, boxZoom: true }).setView([31.1471, 75.3412], isMobile ? 6 : 7); 
 let punjabLayer, labelsLayer = L.layerGroup().addTo(map); let charts = {};
 
-// Monochromatic Blue Palette
 const palette = ["#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a", "#0369a1", "#0c4a6e"];
 const primaryThemeColor = "#2563eb";
 let defaultBounds = null, districtBoundsMap = {}; 
 
-// =======================================================================
-// CORE DATA ENGINE
-// =======================================================================
+// =========================================================
+// 🚀 FIXED FILE PATH 
+// =========================================================
 const CSV_URL = 'present_data.csv'; 
 
 const BATCH_TARGETS = { 'Batch 1': 32, 'Batch 2': 32, 'Batch 3': 32, 'Batch 4': 32, 'Batch 5': 32, 'Batch 6': 32, 'Batch 7': 32, 'Batch 8': 32, 'Batch 9': 32, 'Batch 10': 32, 'Batch 11': 32, 'Batch 12': 28 };
@@ -352,7 +328,7 @@ const DISTRICT_MAPPING = { "sas nagar": "MOHALI", "s.a.s nagar": "MOHALI", "moha
 
 let globalTeacherData = [];
 
-// Attempt 1: Try fetching the CSV automatically
+// Fetches CSV directly. NO popup blockers.
 Papa.parse(CSV_URL, {
     download: true,
     header: true,
@@ -360,31 +336,13 @@ Papa.parse(CSV_URL, {
     complete: function(results) {
         if(results.data && results.data.length > 0) {
             processCSV(results.data);
-            loadDashboard();
-        } else {
-            document.getElementById('csv-fallback-overlay').style.display = 'flex';
         }
+        loadDashboard();
     },
     error: function(err) {
-        // If local file is blocked by browser security, show the manual upload overlay
-        console.warn("Auto-fetch blocked by browser. Requesting manual file selection.");
-        document.getElementById('csv-fallback-overlay').style.display = 'flex';
-    }
-});
-
-// Attempt 2: Manual File Upload Fallback
-document.getElementById('manual-csv-upload').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                document.getElementById('csv-fallback-overlay').style.display = 'none'; // Hide overlay
-                processCSV(results.data);
-                loadDashboard();
-            }
-        });
+        console.error("PapaParse failed to load the CSV file:", err);
+        // It failed, but we load the dashboard anyway with 0s so it doesn't break the page.
+        loadDashboard();
     }
 });
 
@@ -425,7 +383,6 @@ function loadDashboard() {
     labelsLayer.clearLayers(); if(punjabLayer) map.removeLayer(punjabLayer);
     const resetBtn = document.getElementById('btn-reset'); if(resetBtn) resetBtn.style.display = isIsolated ? 'flex' : 'none';
 
-    // Calculate Stats from globalTeacherData
     let arrived = {}, total_arrived = 0, gender_stats = {"Male": 0, "Female": 0, "Not Specified": 0}, designation_stats = {};
     
     globalTeacherData.forEach(t => {
@@ -445,7 +402,6 @@ function loadDashboard() {
     let sortedDesig = Object.fromEntries(Object.entries(designation_stats).sort(([,a],[,b]) => b - a).slice(0, 5));
     let statsData = { arrived, total_arrived, expected_total, gender_stats, designation_stats: sortedDesig };
 
-    // Fetch GeoJSON and draw map
     fetch('static/punjab_districts.geojson').then(r => r.json()).catch(()=>({features:[]})).then(geo => {
         if(!geo.features.length) return;
         punjabLayer = L.geoJSON(geo, {
