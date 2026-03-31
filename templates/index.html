@@ -236,7 +236,7 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 
 <header class="hdr">
   <img src="{{ logo_left | default('https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Logo_of_the_Government_of_Punjab%2C_India.svg/150px-Logo_of_the_Government_of_Punjab%2C_India.svg.png') }}" id="img-logo-left" 
-       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-left').click()" title="Click to Change Logo" {% endif %} alt="SCERT Logo">
+       {% if is_admin %} class="editable-img" onclick="document.getElementById('upload-logo-left').click()" title="Click to Change Logo" {% endif %} alt="static/SCERT Logo">
        
   <div class="hdr-center">
     <h1 id="live-site-title" {% if is_admin %}contenteditable="true" class="editable"{% endif %}>{{ site_title }}</h1><br>
@@ -290,7 +290,7 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 
   <div class="map-panel" id="resizable-map">
     <div class="map-header">
-      <span class="panel-title">Live Deployment Tracking</span>
+      <span class="panel-title">Punjab Map</span>
       <div class="map-badges">
         <div class="badge arrived"><span id="b-arrived">0</span><label>Arrived</label></div>
         <div class="badge target"><span id="b-target">380</span><label>Target</label></div>
