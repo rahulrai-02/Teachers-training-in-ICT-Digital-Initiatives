@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>{{ site_title | default('Live Dashboard') }}</title>
+<title>Live Dashboard - ICT Training</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
 :root{
   --primary: #2563eb;
@@ -189,15 +190,15 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 <body>
 
 <header class="hdr">
-  <img src="/static/scert_logo.png" id="img-logo-left" alt="SCERT Logo">
+  <img src="static/scert_logo.png" id="img-logo-left" alt="SCERT Logo">
        
   <div class="hdr-center">
-    <h1 id="live-site-title">{{ site_title | default('TEACHERS TRAINING IN ICT & DIGITAL INITIATIVES') }}</h1><br>
-    <p class="sub" id="live-sub-title">{{ sub_title | default('Two Days Training Programme at NIELIT Ropar') }}</p><br>
-    <p class="collab" id="live-collab">{{ collab_text | default('IN COLLABORATION WITH SCERT PUNJAB') }}</p>
+    <h1 id="live-site-title">TEACHERS TRAINING IN ICT & DIGITAL INITIATIVES</h1><br>
+    <p class="sub" id="live-sub-title">Two Days Training Programme at NIELIT Ropar</p><br>
+    <p class="collab" id="live-collab">IN COLLABORATION WITH SCERT PUNJAB</p>
   </div>
   
-  <img src="/static/edu_logo.png" id="img-logo-right" alt="NIELIT Logo">
+  <img src="static/edu_logo.png" id="img-logo-right" alt="NIELIT Logo">
 </header>
 
 <nav class="nav">
@@ -332,14 +333,67 @@ let punjabLayer, labelsLayer = L.layerGroup().addTo(map); let charts = {};
 // Monochromatic Blue Palette
 const palette = ["#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a", "#0369a1", "#0c4a6e"];
 const primaryThemeColor = "#2563eb";
-
 let defaultBounds = null, districtBoundsMap = {}; 
+
+// --- NEW DATA FETCHING LOGIC (NO PYTHON NEEDED) ---
+
+// 🔥 PASTE YOUR GITHUB "RAW" URL HERE 🔥
+// Or just leave it as 'present_data.csv' if it's in the same folder
+const CSV_URL = 'present_data.csv'; 
+
+const BATCH_TARGETS = { 'Batch 1': 32, 'Batch 2': 32, 'Batch 3': 32, 'Batch 4': 32, 'Batch 5': 32, 'Batch 6': 32, 'Batch 7': 32, 'Batch 8': 32, 'Batch 9': 32, 'Batch 10': 32, 'Batch 11': 32, 'Batch 12': 28 };
+const DISTRICT_MAPPING = { "sas nagar": "MOHALI", "s.a.s nagar": "MOHALI", "mohali": "MOHALI", "sri muktsar sahib": "MUKTSAR", "muktsar": "MUKTSAR", "shahid bhagat singh nagar": "NAWANSHAHR", "sbs nagar": "NAWANSHAHR", "taran taran": "TARN TARAN", "firozpur": "FEROZEPUR", "ferozepur": "FEROZEPUR", "fatehgarh sahib": "FATEHGARH SAHIB", "rupnagar": "RUPNAGAR", "ropar": "RUPNAGAR" };
+
+let globalTeacherData = [];
+
+// Start the whole app by fetching the CSV
+Papa.parse(CSV_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+        processCSV(results.data);
+        loadDashboard();
+    },
+    error: function(err) {
+        console.error("Failed to load CSV:", err);
+        loadDashboard(); // Load with 0s if failed
+    }
+});
+
+function processCSV(data) {
+    globalTeacherData = data.map((row, idx) => {
+        let cleanRow = {};
+        for(let key in row) if(key) cleanRow[key.trim().toLowerCase()] = row[key].trim();
+        
+        let dist = cleanRow['district'] || '';
+        let mappedDist = DISTRICT_MAPPING[dist.toLowerCase()] || dist.toUpperCase();
+        
+        let batch = cleanRow['batch no'] || cleanRow['batch'] || 'Unknown';
+        if(batch.toLowerCase().startsWith('batch')) batch = 'Batch ' + batch.toLowerCase().replace('batch', '').trim();
+        
+        let gender = cleanRow['gender'] || '';
+        let cleanGender = "Not Specified";
+        if(['M', 'MALE'].includes(gender.toUpperCase())) cleanGender = "Male";
+        if(['F', 'FEMALE'].includes(gender.toUpperCase())) cleanGender = "Female";
+
+        return {
+            row_id: idx,
+            Batch: batch,
+            District: mappedDist,
+            "School Name": cleanRow['school name'] || cleanRow['school'] || 'N/A',
+            Name: cleanRow['name'] || cleanRow['teacher name'] || 'UNKNOWN',
+            Designation: cleanRow['designation'] || 'TEACHER',
+            "Udise Code": cleanRow['udise code'] || cleanRow['udise'] || 'N/A',
+            Gender: cleanGender
+        };
+    }).filter(d => d.District);
+}
 
 function resetMap() { document.getElementById('f-district').value = 'All'; loadDashboard(); if(defaultBounds) map.fitBounds(defaultBounds); }
 function applyFilters() { const dist = document.getElementById('f-district').value; loadDashboard(); if(isMobile && dist !== 'All') document.getElementById('table-section').scrollIntoView({behavior: 'smooth', block: 'start'}); }
 function resolve(n) { if(!n) return ""; let c = n.trim().toLowerCase(); if(c.includes("sas")||c.includes("mohali")) return "MOHALI"; if(c.includes("muktsar")) return "MUKTSAR"; if(c.includes("rupnagar")||c.includes("ropar")) return "RUPNAGAR"; if(c.includes("bhagat")||c.includes("nawanshahr")) return "NAWANSHAHR"; if(c.includes("taran")) return "TARN TARAN"; if(c.includes("firozpur")||c.includes("ferozepur")) return "FEROZEPUR"; if(c.includes("fatehgarh")) return "FATEHGARH SAHIB"; return c.toUpperCase(); }
 
-// API FETCH LOGIC
 function loadDashboard() {
     const batch = document.getElementById('f-batch').value;
     const currentDist = document.getElementById('f-district').value; 
@@ -347,35 +401,57 @@ function loadDashboard() {
     labelsLayer.clearLayers(); if(punjabLayer) map.removeLayer(punjabLayer);
     const resetBtn = document.getElementById('btn-reset'); if(resetBtn) resetBtn.style.display = isIsolated ? 'flex' : 'none';
 
-    // Fetching stats from backend
-    fetch(`/api/stats?batch=${batch}`).then(r => r.json()).catch(()=>({arrived:{}, total_arrived:0, expected_total:380})).then(data => {
-        document.getElementById('b-target').innerText = data.expected_total || 0;
-        fetch('/static/punjab_districts.geojson').then(r => r.json()).then(geo => {
-            punjabLayer = L.geoJSON(geo, {
-                style: (f) => {
-                    const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
-                    const arrived = data.arrived[csvName] || 0;
-                    let cCls = arrived > 0 ? 'clickable-district' : 'non-clickable-district';
-                    
-                    if(isIsolated) return csvName === currentDist ? {color:"#fff", weight:2, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls} : {color:"transparent", weight:0, fillColor:"transparent", fillOpacity:0, opacity:0, className:'non-clickable-district'};
-                    if(arrived > 0) return {color:"#fff", weight:1.5, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls};
-                    return {color:"#fff", weight:1.5, fillColor:"#cbd5e1", fillOpacity:0.4, className:cCls}; 
-                },
-                onEachFeature: (f, l) => {
-                    const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
-                    const csvName = resolve(rawName); const arrived = data.arrived[csvName] || 0;
-                    districtBoundsMap[csvName] = l.getBounds(); 
-                    if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${arrived} Arrived</div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
-                    if(arrived > 0) l.on('click', () => { document.getElementById('f-district').value = csvName; applyFilters(); setTimeout(()=>map.fitBounds(districtBoundsMap[csvName]), 50); });
-                }
-            }).addTo(map);
-            document.getElementById('b-arrived').innerText = data.total_arrived || 0;
-            document.getElementById('s-total').innerText = data.total_arrived || 0;
-            if(!defaultBounds) defaultBounds = punjabLayer.getBounds();
-            if(isIsolated && districtBoundsMap[currentDist]) map.fitBounds(districtBoundsMap[currentDist]);
-            else if(batch === 'All') map.fitBounds(defaultBounds);
-            updateCharts(data); showAdmin(currentDist, batch); 
-        });
+    // Calculate Stats from globalTeacherData instead of Python Backend
+    let arrived = {}, total_arrived = 0, gender_stats = {"Male": 0, "Female": 0, "Not Specified": 0}, designation_stats = {};
+    
+    globalTeacherData.forEach(t => {
+        if (batch === 'All' || t.Batch === batch) {
+            arrived[t.District] = (arrived[t.District] || 0) + 1;
+            total_arrived++;
+            gender_stats[t.Gender]++;
+            if(t.Designation && t.Designation !== 'N/A') {
+                designation_stats[t.Designation] = (designation_stats[t.Designation] || 0) + 1;
+            }
+        }
+    });
+
+    let expected_total = batch === 'All' ? Object.values(BATCH_TARGETS).reduce((a,b)=>a+b,0) : (BATCH_TARGETS[batch] || 32);
+    document.getElementById('b-target').innerText = expected_total;
+    
+    // Sort designations for chart
+    let sortedDesig = Object.fromEntries(Object.entries(designation_stats).sort(([,a],[,b]) => b - a).slice(0, 5));
+    let statsData = { arrived, total_arrived, expected_total, gender_stats, designation_stats: sortedDesig };
+
+    // Fetch GeoJSON and draw map
+    fetch('static/punjab_districts.geojson').then(r => r.json()).catch(()=>({features:[]})).then(geo => {
+        if(!geo.features.length) return; // Prevent crash if missing geojson
+        punjabLayer = L.geoJSON(geo, {
+            style: (f) => {
+                const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
+                const arrCount = statsData.arrived[csvName] || 0;
+                let cCls = arrCount > 0 ? 'clickable-district' : 'non-clickable-district';
+                
+                if(isIsolated) return csvName === currentDist ? {color:"#fff", weight:2, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls} : {color:"transparent", weight:0, fillColor:"transparent", fillOpacity:0, opacity:0, className:'non-clickable-district'};
+                if(arrCount > 0) return {color:"#fff", weight:1.5, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls};
+                return {color:"#fff", weight:1.5, fillColor:"#cbd5e1", fillOpacity:0.4, className:cCls}; 
+            },
+            onEachFeature: (f, l) => {
+                const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
+                const csvName = resolve(rawName); const arrCount = statsData.arrived[csvName] || 0;
+                districtBoundsMap[csvName] = l.getBounds(); 
+                if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${arrCount} Arrived</div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
+                if(arrCount > 0) l.on('click', () => { document.getElementById('f-district').value = csvName; applyFilters(); setTimeout(()=>map.fitBounds(districtBoundsMap[csvName]), 50); });
+            }
+        }).addTo(map);
+        
+        document.getElementById('b-arrived').innerText = statsData.total_arrived;
+        document.getElementById('s-total').innerText = statsData.total_arrived;
+        if(!defaultBounds) defaultBounds = punjabLayer.getBounds();
+        if(isIsolated && districtBoundsMap[currentDist]) map.fitBounds(districtBoundsMap[currentDist]);
+        else if(batch === 'All') map.fitBounds(defaultBounds);
+        
+        updateCharts(statsData); 
+        showAdmin(currentDist, batch); 
     });
 }
 
@@ -383,25 +459,28 @@ function showAdmin(name, batch) {
     document.getElementById('tbl-title').innerText = name === 'All' ? `All Districts` : `${name} District`;
     document.getElementById('tbl-sub').innerText = `Filter: ${batch}`;
     
-    // Fetching table data from backend
-    fetch(`/api/teachers/${name}?batch=${batch}`).then(r => r.json()).catch(()=>[]).then(list => {
-        let uSch = new Set(), uDist = new Set(), uBat = new Set();
-        let exK = list.length > 0 ? Object.keys(list[0]).filter(k => !['row_id','Date','District','School Name','Name','Designation','Udise Code','Batch'].includes(k)) : [];
-        let h = `<table><tr><th class="t-sno">#</th><th>Teacher Details</th><th>UDISE Code</th><th>School Name</th><th>District</th><th>Batch</th>`;
-        exK.forEach(k => h+=`<th>${k}</th>`); h+=`</tr>`;
-        if(list.length === 0) h += `<tr><td colspan="${6+exK.length}" style="text-align:center; color:var(--muted); padding:50px;">No arrivals recorded.</td></tr>`;
-        else {
-            list.forEach((t, i) => {
-                const s = t['School Name']||'-', d = t['District']||'-', b = t['Batch']||'-', des = t['Designation']||'', u = t['Udise Code']||'-';
-                if(s!=='-') uSch.add(s); if(d!=='-') uDist.add(d); if(b!=='-') uBat.add(b);
-                h += `<tr><td class="t-sno">${i+1}</td><td><div class="t-name">${t['Name']||'-'}</div>${des ? `<div class="t-desig">${des}</div>`:''}</td><td>${u!=='-'?`<span class="t-udise">${u}</span>`:'-'}</td><td class="t-sch">${s}</td><td style="font-weight:700; color:var(--primary);">${d}</td><td style="color:var(--muted); font-weight:600;">${b}</td>`;
-                exK.forEach(k => h+=`<td>${t[k]||'-'}</td>`); h+=`</tr>`;
-            });
-        }
-        document.getElementById('table-container').innerHTML = h + `</table>`;
-        document.getElementById('s-shown').innerText = list.length; document.getElementById('s-schools').innerText = uSch.size; document.getElementById('s-districts').innerText = uDist.size; document.getElementById('s-batches').innerText = uBat.size;
-        document.getElementById('ss-total').innerText = batch; document.getElementById('ss-districts').innerText = name==='All'?'Across Punjab':`${name} Only`;
+    // Filter global data for the table
+    let list = globalTeacherData.filter(t => {
+        let matchBatch = (batch === 'All' || t.Batch === batch);
+        let matchDist = (name === 'All' || t.District === name.toUpperCase());
+        return matchBatch && matchDist;
     });
+
+    let uSch = new Set(), uDist = new Set(), uBat = new Set();
+    let h = `<table><tr><th class="t-sno">#</th><th>Teacher Details</th><th>UDISE Code</th><th>School Name</th><th>District</th><th>Batch</th></tr>`;
+    
+    if(list.length === 0) {
+        h += `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:50px;">No arrivals recorded.</td></tr>`;
+    } else {
+        list.forEach((t, i) => {
+            const s = t['School Name']||'-', d = t['District']||'-', b = t['Batch']||'-', des = t['Designation']||'', u = t['Udise Code']||'-';
+            if(s!=='-') uSch.add(s); if(d!=='-') uDist.add(d); if(b!=='-') uBat.add(b);
+            h += `<tr><td class="t-sno">${i+1}</td><td><div class="t-name">${t['Name']||'-'}</div>${des ? `<div class="t-desig">${des}</div>`:''}</td><td>${u!=='-'?`<span class="t-udise">${u}</span>`:'-'}</td><td class="t-sch">${s}</td><td style="font-weight:700; color:var(--primary);">${d}</td><td style="color:var(--muted); font-weight:600;">${b}</td></tr>`;
+        });
+    }
+    document.getElementById('table-container').innerHTML = h + `</table>`;
+    document.getElementById('s-shown').innerText = list.length; document.getElementById('s-schools').innerText = uSch.size; document.getElementById('s-districts').innerText = uDist.size; document.getElementById('s-batches').innerText = uBat.size;
+    document.getElementById('ss-total').innerText = batch; document.getElementById('ss-districts').innerText = name==='All'?'Across Punjab':`${name} Only`;
 }
 
 function updateCharts(data) {
@@ -423,8 +502,7 @@ function updateCharts(data) {
 function filterTable() { let input = document.getElementById("search").value.toLowerCase(); let rows = document.querySelector("table")?.getElementsByTagName("tr"); if(!rows) return; for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].innerText.toLowerCase().includes(input) ? "" : "none"; }
 function exportCSV() { let csv = []; let rows = document.querySelectorAll("#table-container table tr"); if(rows.length <= 1) return; for(let i=0; i<rows.length; i++) { if(rows[i].style.display === "none") continue; let row = [], cols = rows[i].querySelectorAll("td, th"); for(let j=0; j<cols.length; j++) row.push('"' + cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " - ").replace(/"/g, '""') + '"'); csv.push(row.join(",")); } let blob = new Blob([csv.join("\n")], {type: "text/csv"}); let a = document.createElement("a"); a.download = 'Data.csv'; a.href = URL.createObjectURL(blob); a.click(); }
 
-loadDashboard();
-setTimeout(() => map.invalidateSize(), 300);
+setTimeout(() => { if(map) map.invalidateSize() }, 300);
 </script>
 </body>
 </html>
