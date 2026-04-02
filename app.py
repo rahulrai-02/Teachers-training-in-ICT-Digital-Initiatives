@@ -19,12 +19,17 @@ BATCH_TARGETS = {
     'Batch 9': 32, 'Batch 10': 32, 'Batch 11': 32, 'Batch 12': 28
 }
 
+# Add any typos you find in the terminal to this dictionary!
 DISTRICT_MAPPING = {
     "sas nagar": "MOHALI", "s.a.s nagar": "MOHALI", "mohali": "MOHALI",
     "sri muktsar sahib": "MUKTSAR", "muktsar": "MUKTSAR",
     "shahid bhagat singh nagar": "NAWANSHAHR", "sbs nagar": "NAWANSHAHR",
     "taran taran": "TARN TARAN", "firozpur": "FEROZEPUR", "ferozepur": "FEROZEPUR",
-    "fatehgarh sahib": "FATEHGARH SAHIB", "rupnagar": "RUPNAGAR", "ropar": "RUPNAGAR"
+    "fatehgarh sahib": "FATEHGARH SAHIB", "rupnagar": "RUPNAGAR", "ropar": "RUPNAGAR",
+    # Examples of typos to catch (update these based on what prints in your terminal)
+    "jalandher": "JALANDHAR", 
+    "pathankote": "PATHANKOT",
+    "ludhina": "LUDHIANA"
 }
 
 # --- BULLETPROOF DATA PARSER ---
@@ -78,8 +83,11 @@ def get_present_data():
         
         for idx, row in enumerate(reader):
             clean_row = {k.strip().lower(): str(v).strip() for k, v in row.items() if k}
-            dist_val = clean_row.get('district', '')
+            
+            # --- FIX APPLIED HERE: Stripped invisible spaces (.strip()) ---
+            dist_val = clean_row.get('district', '').strip()
             mapped_dist = DISTRICT_MAPPING.get(dist_val.lower(), dist_val.upper())
+            
             batch_val = clean_row.get('batch no', 'Unknown')
             if batch_val.lower().startswith('batch'): 
                 batch_val = 'Batch ' + batch_val.lower().replace('batch', '').strip()
@@ -137,6 +145,12 @@ def get_stats():
             if desig not in ['N/A', '']: 
                 designation_stats[desig] = designation_stats.get(desig, 0) + 1
             
+    # --- FIX APPLIED HERE: Prints exactly which districts are rendering ---
+    print("\n" + "="*50)
+    print(f"🔍 CURRENT DISTRICTS IN SYSTEM (Total: {len(arrived)})")
+    print(list(arrived.keys()))
+    print("="*50 + "\n")
+
     expected = sum(BATCH_TARGETS.values()) if sel_batch == 'All' else BATCH_TARGETS.get(sel_batch, 32)
     top_desigs = dict(sorted(designation_stats.items(), key=lambda item: item[1], reverse=True)[:5])
     
