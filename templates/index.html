@@ -418,7 +418,7 @@ function loadDashboard() {
                 const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
                 const csvName = resolve(rawName); const arrCount = statsData.arrived[csvName] || 0;
                 districtBoundsMap[csvName] = l.getBounds(); 
-                if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${arrCount} Arrived</div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
+                if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${arrCount} Attended </div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
                 if(arrCount > 0) l.on('click', () => { document.getElementById('f-district').value = csvName; applyFilters(); setTimeout(()=>map.fitBounds(districtBoundsMap[csvName]), 50); });
             }
         }).addTo(map);
