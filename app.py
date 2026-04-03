@@ -20,17 +20,13 @@ BATCH_TARGETS = {
 }
 
 # Add any typos you find in the terminal to this dictionary!
+# All district names map to their standard names (matching GeoJSON)
 DISTRICT_MAPPING = {
-    "sas nagar": "Sahibzada Ajit Singh Nagar", "s.a.s nagar": "Sahibzada Ajit Singh Nagar", "mohali": "Sahibzada Ajit Singh Nagar", "SAS NAGAR": "Sahibzada Ajit Singh Nagar", 
-    "S.A.S NAGAR": "Sahibzada Ajit Singh Nagar", 
-    "S.A.S. NAGAR": "Sahibzada Ajit Singh Nagar",
-    "MOHALI": "Sahibzada Ajit Singh Nagar",
-    "SAS NAGAR": "Sahibzada Ajit Singh Nagar",
-    "S.A.S NAGAR": "Sahibzada Ajit Singh Nagar",
-    "S.A.S. NAGAR": "Sahibzada Ajit Singh Nagar",
+    "sas nagar": "SAS NAGAR", "s.a.s nagar": "SAS NAGAR", "mohali": "SAS NAGAR", "SAS NAGAR": "SAS NAGAR", 
+    "S.A.S NAGAR": "SAS NAGAR", "S.A.S. NAGAR": "SAS NAGAR", "MOHALI": "SAS NAGAR",
     "sri muktsar sahib": "MUKTSAR", "muktsar": "MUKTSAR",
     "shahid bhagat singh nagar": "NAWANSHAHR", "sbs nagar": "NAWANSHAHR",
-    "taran taran": "TARN TARAN", "firozpur": "FEROZEPUR", "ferozepur": "FEROZEPUR",
+    "taran taran": "TARN TARAN", "tarantaran": "TARN TARAN", "firozpur": "FEROZEPUR", "ferozepur": "FEROZEPUR",
     "fatehgarh sahib": "FATEHGARH SAHIB", "rupnagar": "RUPNAGAR", "ropar": "RUPNAGAR",
     # Examples of typos to catch (update these based on what prints in your terminal)
     "jalandher": "JALANDHAR", 
@@ -125,6 +121,36 @@ def get_present_data():
 def home():
     # Admin removed. Just serving the clean HTML.
     return render_template('index.html')
+
+@app.route('/gallery')
+def gallery():
+    return render_template('gallery.html')
+
+@app.route('/api/gallery')
+def get_gallery():
+    """Returns list of available batches with photos"""
+    import os
+    gallery_folder = 'static/photos'
+    
+    batches = {}
+    if os.path.exists(gallery_folder):
+        for filename in sorted(os.listdir(gallery_folder)):
+            if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+                # Extract batch number from filename
+                import re
+                match = re.search(r'batch[^\d]*(\d+)', filename.lower())
+                if match:
+                    batch_num = int(match.group(1))
+                    if batch_num not in batches:
+                        batches[batch_num] = []
+                    batches[batch_num].append(filename)
+    
+    # Only return batches 1-10 and 12 (exclude 11 if not available)
+    available_batches = {k: f'static/photos/{v[0]}' for k, v in batches.items() if k != 11}
+    return jsonify({
+        'batches': sorted(available_batches.keys()),
+        'photos': available_batches
+    })
 
 @app.route('/api/dates')
 def get_dates(): 

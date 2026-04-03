@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Photo Gallery - ICT Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary: #2563eb;
+  --primary-glow: #2563eb25;
+  --bg: #f1f5f9;
+  --accent:#10b981;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --dark:#0f172a;
+  --darker:#020617;
+  --surface:#ffffff;
+  --surface2:#f8fafc;
+  --border:#e2e8f0;
+  --text:#0f172a;
+  --muted:#64748b;
+  --r:14px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+body{ 
+  -webkit-user-select: none; 
+  -moz-user-select: none; 
+  -ms-user-select: none; 
+  user-select: none; 
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* HEADER */
+.hdr{
+  background:#fff;
+  border-bottom:3px solid var(--primary);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 3%;
+  gap:10px;
+  box-shadow:0 2px 20px rgba(0,0,0,.05);
+  position:relative;
+  z-index:50
+}
+
+.hdr img{height:62px;width:auto;object-fit:contain;flex-shrink:0;}
+
+.hdr-center{text-align:center;flex:1;padding:0 12px}
+.hdr-center h1{font-size:clamp(11px,2vw,21px);font-weight:900;color:var(--dark);text-transform:uppercase;letter-spacing:.4px;line-height:1.25; display: inline-block;}
+.hdr-center .sub{font-size:clamp(9px,1.3vw,13px);color:var(--muted);font-weight:600;margin-top:3px; display: inline-block;}
+
+/* NAV */
+.nav{
+  background:var(--darker);
+  display:flex;
+  justify-content:center;
+  gap:28px;
+  padding:11px 20px;
+  overflow-x:auto;
+  white-space:nowrap
+}
+
+.nav::-webkit-scrollbar{display:none}
+
+.nav a{
+  color:#94a3b8;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  padding-bottom:3px;
+  border-bottom:2px solid transparent;
+  transition:.2s
+}
+
+.nav a:hover{color:#fff}
+.nav a.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+/* MAIN */
+.main{
+  padding:40px 3%;
+  max-width:1200px;
+  margin:0 auto;
+  width:100%;
+  flex:1;
+}
+
+/* GALLERY SECTION */
+.gallery-container{
+  background:#fff;
+  border-radius:var(--r);
+  border:1px solid var(--border);
+  overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);
+}
+
+.gallery-header{
+  padding:24px;
+  text-align:center;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+
+.gallery-header h1{
+  font-size:28px;
+  font-weight:900;
+  color:var(--dark);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:10px;
+}
+
+.gallery-header p{
+  font-size:13px;
+  color:var(--muted);
+  font-weight:600;
+}
+
+/* CAROUSEL */
+.carousel-wrapper{
+  position:relative;
+  width:100%;
+  max-width:900px;
+  margin:0 auto;
+  background:#000;
+  aspect-ratio:4/3;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+.carousel-image{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  opacity:0;
+  transition:opacity 0.5s ease;
+}
+
+.carousel-image.active{
+  opacity:1;
+}
+
+.carousel-image.loading{
+  background:#f1f5f9;
+  object-fit:cover;
+}
+
+/* CAROUSEL CONTROLS */
+.carousel-controls{
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:12px;
+  align-items:center;
+  background:rgba(0,0,0,0.7);
+  padding:12px 20px;
+  border-radius:50px;
+  z-index:10;
+}
+
+.btn-nav{
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  font-size:18px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:0.2s;
+}
+
+.btn-nav:hover{
+  background:#1d4ed8;
+  transform:scale(1.1);
+}
+
+.carousel-counter{
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  font-family:'DM Mono', monospace;
+  min-width:60px;
+  text-align:center;
+}
+
+/* BATCH SELECTOR */
+.batch-selector-wrapper{
+  padding:24px;
+  background:#fff;
+  border-bottom:1px solid var(--border);
+  text-align:center;
+}
+
+.batch-label{
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--muted);
+  margin-bottom:12px;
+  display:block;
+}
+
+#batch-select{
+  padding:12px 16px;
+  border-radius:9px;
+  border:2px solid var(--border);
+  font-family:inherit;
+  font-weight:700;
+  font-size:14px;
+  outline:none;
+  cursor:pointer;
+  background:var(--surface2);
+  color:var(--dark);
+  min-width:200px;
+  max-width:100%;
+  transition:0.2s;
+}
+
+#batch-select:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px var(--primary-glow);
+}
+
+#batch-select:hover{
+  border-color:var(--primary);
+}
+
+/* BATCH INFO */
+.batch-info{
+  padding:24px;
+  background:var(--surface2);
+  text-align:center;
+  border-top:1px solid var(--border);
+}
+
+.batch-info-title{
+  font-size:24px;
+  font-weight:900;
+  color:var(--primary);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:6px;
+}
+
+.batch-info-text{
+  font-size:13px;
+  color:var(--muted);
+  font-weight:600;
+}
+
+/* KEYBOARD NAVIGATION HINT */
+.nav-hint{
+  padding:12px 24px;
+  background:#fef3c7;
+  color:#92400e;
+  font-size:11px;
+  text-align:center;
+  font-weight:600;
+  border-top:1px solid #fcd34d;
+}
+
+/* FOOTER */
+footer{
+  background:var(--darker);
+  color:#94a3b8;
+  padding:34px 3% 18px;
+  border-top:3px solid var(--primary);
+  margin-top:auto;
+}
+
+.footer-content{
+  max-width:1200px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:24px;
+}
+
+footer h3{
+  color:#fff;
+  font-size:14px;
+  font-weight:800;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+
+footer p{
+  font-size:12px;
+  color:#cbd5e1;
+  line-height:1.7;
+}
+
+footer a{
+  color:#38bdf8;
+  text-decoration:none;
+  font-weight:700;
+  transition:0.2s;
+}
+
+footer a:hover{
+  color:#fff;
+}
+
+.back-link{
+  display:inline-block;
+  margin-bottom:20px;
+  color:var(--primary);
+  text-decoration:none;
+  font-weight:700;
+  font-size:13px;
+  transition:0.2s;
+}
+
+.back-link:hover{
+  color:var(--dark);
+  text-decoration:underline;
+}
+
+/* NO PHOTOS MESSAGE */
+.no-photos{
+  padding:60px 20px;
+  text-align:center;
+  color:var(--muted);
+  font-size:16px;
+  font-weight:600;
+}
+
+.no-photos-icon{
+  font-size:48px;
+  margin-bottom:15px;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  .hdr { flex-wrap: wrap; justify-content: space-between; }
+  .hdr img { height: 50px; }
+  .hdr-center { flex: 1 1 100%; margin-top: 15px; }
+  .hdr-center h1 { font-size: 14px; }
+  .nav { flex-wrap: wrap; gap: 10px 15px; white-space: normal; padding: 10px 4%; }
+  .nav a { font-size: 10px; }
+  .main { padding: 20px 4%; }
+  .gallery-header { padding: 18px; }
+  .gallery-header h1 { font-size: 20px; margin-bottom: 6px; }
+  .carousel-wrapper { aspect-ratio: 16/9; }
+  .batch-selector-wrapper { padding: 18px; }
+  #batch-select { min-width: 100%; font-size: 13px; }
+  .carousel-controls { bottom: 15px; gap: 8px; padding: 10px 15px; }
+  .btn-nav { width: 36px; height: 36px; font-size: 16px; }
+  .carousel-counter { font-size: 12px; }
+  .batch-info { padding: 18px; }
+  .batch-info-title { font-size: 18px; }
+  .footer-content { grid-template-columns: 1fr; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <img src="static/scert_logo.png" alt="SCERT Logo">
+  <div class="hdr-center">
+    <h1>Photo Gallery</h1><br>
+    <p class="sub">ICT Training Sessions - Batch Photos</p>
+  </div>
+  <img src="static/edu_logo.png" alt="NIELIT Logo">
+</header>
+
+<nav class="nav">
+  <a href="/">Live Dashboard</a>
+  <a href="static/Schedule of Training.pdf" target="_blank">Course Content</a>
+  <a href="/gallery" class="active">Photo Gallery</a>
+  <a href="https://nielit.gov.in/ropar/" target="_blank">NIELIT Portal</a>
+</nav>
+
+<main class="main">
+  <a href="/" class="back-link">← Back to Dashboard</a>
+
+  <div class="gallery-container">
+    <div class="gallery-header">
+      <h1>📸 Training Session Photos</h1>
+      <p>Browse photos from each batch's ICT training program</p>
+    </div>
+
+    <div class="carousel-wrapper" id="carousel">
+      <img id="carousel-image" class="carousel-image loading" alt="Batch photo" src="">
+      <div class="carousel-controls">
+        <button class="btn-nav" onclick="previousPhoto()" title="Previous (← Arrow)">❮</button>
+        <div class="carousel-counter">
+          <span id="photo-counter">0 / 0</span>
+        </div>
+        <button class="btn-nav" onclick="nextPhoto()" title="Next (→ Arrow)">❯</button>
+      </div>
+    </div>
+
+    <div class="batch-selector-wrapper">
+      <label class="batch-label" for="batch-select">Select Batch</label>
+      <select id="batch-select" onchange="changeBatch()">
+        <option value="">-- Loading Batches --</option>
+      </select>
+    </div>
+
+    <div class="batch-info">
+      <div class="batch-info-title" id="batch-title">Select a Batch</div>
+      <div class="batch-info-text" id="batch-text">Choose a batch from the dropdown above to view their training photos</div>
+    </div>
+
+    <div class="nav-hint" id="nav-hint" style="display:none;">
+      💡 Tip: Use ← and → arrow keys to navigate between batches, or use Previous/Next buttons.
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-content">
+    <div>
+      <h3>NIELIT Ropar</h3>
+      <p><strong><span style="color:#38bdf8;">Work Based Learning (WBL)</span> Department</strong><br>National Institute of Electronics &amp; Information Technology<br>Ministry of Electronics &amp; IT, Government of India</p>
+    </div>
+    <div>
+      <h3>Quick Links</h3>
+      <p><a href="#">▶ Course Modules</a></p>
+      <p><a href="static/Schedule of Training.pdf" target="_blank">▶ Download Schedule</a></p>
+      <p><a href="https://nielit.gov.in/ropar/" target="_blank">▶ NIELIT Official Portal</a></p>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:20px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08); font-size:11px; color:#475569;">&copy; 2026 All rights reserved — WBL Department of NIELIT Ropar</div>
+</footer>
+
+<script>
+let allBatches = [];
+let currentBatchIndex = 0;
+let currentPhotoIndex = 0;
+let batchPhotos = {};
+
+// Prevent dev tools
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'c' || e.key === 'C')) { e.preventDefault(); }
+    if (e.key === 'F12') { e.preventDefault(); }
+    
+    // Arrow key navigation
+    if (e.key === 'ArrowLeft') { previousPhoto(); }
+    if (e.key === 'ArrowRight') { nextPhoto(); }
+});
+
+// Load gallery data
+fetch('/api/gallery')
+  .then(res => res.json())
+  .then(data => {
+    allBatches = data.batches;
+    batchPhotos = data.photos;
+    
+    if (allBatches.length > 0) {
+      populateBatchSelector();
+      loadBatch(0);
+      document.getElementById('nav-hint').style.display = 'block';
+    } else {
+      showNoPhotos();
+    }
+  })
+  .catch(err => {
+    console.error('Failed to load gallery:', err);
+    showNoPhotos();
+  });
+
+function populateBatchSelector() {
+  const select = document.getElementById('batch-select');
+  select.innerHTML = '';
+  
+  allBatches.forEach((batch, idx) => {
+    const option = document.createElement('option');
+    option.value = idx;
+    option.textContent = `Batch ${batch}`;
+    select.appendChild(option);
+  });
+  
+  select.value = 0;
+}
+
+function changeBatch() {
+  const idx = parseInt(document.getElementById('batch-select').value);
+  loadBatch(idx);
+}
+
+function loadBatch(idx) {
+  if (idx < 0 || idx >= allBatches.length) return;
+  
+  currentBatchIndex = idx;
+  document.getElementById('batch-select').value = idx;
+  
+  const batchNum = allBatches[idx];
+  document.getElementById('batch-title').textContent = `Batch ${batchNum}`;
+  document.getElementById('batch-text').textContent = `Training session photos from Batch ${batchNum}`;
+  
+  currentPhotoIndex = 0;
+  showPhoto();
+}
+
+function showPhoto() {
+  const batchNum = allBatches[currentBatchIndex];
+  const photoPath = batchPhotos[batchNum];
+  
+  const img = document.getElementById('carousel-image');
+  img.src = photoPath;
+  img.classList.add('loading');
+  
+  img.onload = () => {
+    img.classList.remove('loading');
+    img.classList.add('active');
+  };
+  
+  img.onerror = () => {
+    img.alt = 'Photo not found';
+  };
+  
+  document.getElementById('photo-counter').textContent = `1 / 1`;
+}
+
+function nextPhoto() {
+  if (currentBatchIndex < allBatches.length - 1) {
+    loadBatch(currentBatchIndex + 1);
+  }
+}
+
+function previousPhoto() {
+  if (currentBatchIndex > 0) {
+    loadBatch(currentBatchIndex - 1);
+  }
+}
+
+function showNoPhotos() {
+  document.querySelector('.carousel-wrapper').innerHTML = `
+    <div class="no-photos">
+      <div class="no-photos-icon">📸</div>
+      <p>No photos available yet.</p>
+      <p style="font-size:12px; margin-top:10px;">Photos will be added as training sessions are completed.</p>
+    </div>
+  `;
+  document.querySelector('.batch-selector-wrapper').style.display = 'none';
+  document.querySelector('.batch-info').style.display = 'none';
+}
+</script>
+</body>
+</html>

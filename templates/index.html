@@ -189,9 +189,9 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 </header>
 
 <nav class="nav">
-  <a href="#" class="active">Live Dashboard</a>
+  <a href="/" class="active">Live Dashboard</a>
   <a href="static/Schedule of Training.pdf" target="_blank">Course Content</a>
-  <a href="#">Photo Gallery</a>
+  <a href="/gallery">Photo Gallery</a>
   <a href="https://nielit.gov.in/ropar/" target="_blank">NIELIT Portal</a>
 </nav>
 
@@ -212,10 +212,11 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
     <option value="HOSHIARPUR">Hoshiarpur</option><option value="JALANDHAR">Jalandhar</option>
     <option value="KAPURTHALA">Kapurthala</option><option value="LUDHIANA">Ludhiana</option>
     <option value="MALERKOTLA">Malerkotla</option><option value="MANSA">Mansa</option>
-    <option value="MOHALI">Mohali</option><option value="MUKTSAR">Muktsar</option>
+    <option value="MOGA">Moga</option><option value="MUKTSAR">Muktsar</option>
     <option value="NAWANSHAHR">Nawanshahr</option><option value="PATHANKOT">Pathankot</option>
     <option value="PATIALA">Patiala</option><option value="RUPNAGAR">Rupnagar</option>
-    <option value="SANGRUR">Sangrur</option><option value="TARN TARAN">Tarn Taran</option>
+    <option value="SAS NAGAR">SAS Nagar</option><option value="SANGRUR">Sangrur</option>
+    <option value="TARN TARAN">Tarn Taran</option>
   </select>
 </div>
 
@@ -324,7 +325,7 @@ let defaultBounds = null, districtBoundsMap = {};
 const CSV_URL = 'static/present_data.csv'; 
 
 const BATCH_TARGETS = { 'Batch 1': 32, 'Batch 2': 32, 'Batch 3': 32, 'Batch 4': 32, 'Batch 5': 32, 'Batch 6': 32, 'Batch 7': 32, 'Batch 8': 32, 'Batch 9': 32, 'Batch 10': 32, 'Batch 11': 32, 'Batch 12': 28 };
-const DISTRICT_MAPPING = { "sas nagar": "MOHALI", "s.a.s nagar": "MOHALI", "mohali": "MOHALI", "sri muktsar sahib": "MUKTSAR", "muktsar": "MUKTSAR", "shahid bhagat singh nagar": "NAWANSHAHR", "sbs nagar": "NAWANSHAHR", "taran taran": "TARN TARAN", "firozpur": "FEROZEPUR", "ferozepur": "FEROZEPUR", "fatehgarh sahib": "FATEHGARH SAHIB", "rupnagar": "RUPNAGAR", "ropar": "RUPNAGAR" };
+const DISTRICT_MAPPING = { "sas nagar": "SAS NAGAR", "s.a.s nagar": "SAS NAGAR", "s.a.s. nagar": "SAS NAGAR", "mohali": "SAS NAGAR", "sri muktsar sahib": "MUKTSAR", "muktsar": "MUKTSAR", "shahid bhagat singh nagar": "NAWANSHAHR", "sbs nagar": "NAWANSHAHR", "taran taran": "TARN TARAN", "tarantaran": "TARN TARAN", "firozpur": "FEROZEPUR", "ferozepur": "FEROZEPUR", "fatehgarh sahib": "FATEHGARH SAHIB", "rupnagar": "RUPNAGAR", "ropar": "RUPNAGAR" };
 
 let globalTeacherData = [];
 
@@ -374,7 +375,7 @@ function processCSV(data) {
 
 function resetMap() { document.getElementById('f-district').value = 'All'; loadDashboard(); if(defaultBounds) map.fitBounds(defaultBounds); }
 function applyFilters() { const dist = document.getElementById('f-district').value; loadDashboard(); if(isMobile && dist !== 'All') document.getElementById('table-section').scrollIntoView({behavior: 'smooth', block: 'start'}); }
-function resolve(n) { if(!n) return ""; let c = n.trim().toLowerCase(); if(c.includes("sas")||c.includes("mohali")) return "MOHALI"; if(c.includes("muktsar")) return "MUKTSAR"; if(c.includes("rupnagar")||c.includes("ropar")) return "RUPNAGAR"; if(c.includes("bhagat")||c.includes("nawanshahr")) return "NAWANSHAHR"; if(c.includes("taran")) return "TARN TARAN"; if(c.includes("firozpur")||c.includes("ferozepur")) return "FEROZEPUR"; if(c.includes("fatehgarh")) return "FATEHGARH SAHIB"; return c.toUpperCase(); }
+function resolve(n) { if(!n) return ""; let c = n.trim().toLowerCase(); if(c.includes("sas")||c.includes("mohali")) return "SAS NAGAR"; if(c.includes("muktsar")) return "MUKTSAR"; if(c.includes("rupnagar")||c.includes("ropar")) return "RUPNAGAR"; if(c.includes("bhagat")||c.includes("nawanshahr")) return "NAWANSHAHR"; if(c.includes("taran")) return "TARN TARAN"; if(c.includes("firozpur")||c.includes("ferozepur")) return "FEROZEPUR"; if(c.includes("fatehgarh")) return "FATEHGARH SAHIB"; return c.toUpperCase(); }
 
 function loadDashboard() {
     const batch = document.getElementById('f-batch').value;
@@ -406,7 +407,7 @@ function loadDashboard() {
         if(!geo.features.length) return;
         punjabLayer = L.geoJSON(geo, {
             style: (f) => {
-                const csvName = resolve(f.properties.dtname || f.properties.district || f.properties.NAME_2);
+                const csvName = resolve(f.properties.district);
                 const arrCount = statsData.arrived[csvName] || 0;
                 let cCls = arrCount > 0 ? 'clickable-district' : 'non-clickable-district';
                 
@@ -415,7 +416,7 @@ function loadDashboard() {
                 return {color:"#fff", weight:1.5, fillColor:"#cbd5e1", fillOpacity:0.4, className:cCls}; 
             },
             onEachFeature: (f, l) => {
-                const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2;
+                const rawName = f.properties.district;
                 const csvName = resolve(rawName); const arrCount = statsData.arrived[csvName] || 0;
                 districtBoundsMap[csvName] = l.getBounds(); 
                 if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${arrCount} Attended </div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
