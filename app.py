@@ -21,10 +21,13 @@ BATCH_TARGETS = {
 
 # Add any typos you find in the terminal to this dictionary!
 DISTRICT_MAPPING = {
-    "sas nagar": "S.A.S. NAGAR", "s.a.s nagar": "S.A.S. NAGAR", "mohali": "S.A.S. NAGAR", "SAS NAGAR": "S.A.S. NAGAR", 
-    "S.A.S NAGAR": "S.A.S. NAGAR", 
-    "S.A.S. NAGAR": "S.A.S. NAGAR",
-    "MOHALI": "S.A.S. NAGAR",
+    "sas nagar": "Sahibzada Ajit Singh Nagar", "s.a.s nagar": "Sahibzada Ajit Singh Nagar", "mohali": "Sahibzada Ajit Singh Nagar", "SAS NAGAR": "Sahibzada Ajit Singh Nagar", 
+    "S.A.S NAGAR": "Sahibzada Ajit Singh Nagar", 
+    "S.A.S. NAGAR": "Sahibzada Ajit Singh Nagar",
+    "MOHALI": "Sahibzada Ajit Singh Nagar",
+    "SAS NAGAR": "Sahibzada Ajit Singh Nagar",
+    "S.A.S NAGAR": "Sahibzada Ajit Singh Nagar",
+    "S.A.S. NAGAR": "Sahibzada Ajit Singh Nagar",
     "sri muktsar sahib": "MUKTSAR", "muktsar": "MUKTSAR",
     "shahid bhagat singh nagar": "NAWANSHAHR", "sbs nagar": "NAWANSHAHR",
     "taran taran": "TARN TARAN", "firozpur": "FEROZEPUR", "ferozepur": "FEROZEPUR",
