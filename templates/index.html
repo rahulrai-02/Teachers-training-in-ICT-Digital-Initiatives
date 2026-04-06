@@ -174,6 +174,13 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
   .fi { grid-template-columns: 1fr; text-align: center; } 
   .fl ul { align-items: center; } 
 }
+
+/* FIX: Remove black outline on map click */
+path:focus, 
+.leaflet-interactive:focus, 
+.leaflet-container:focus {
+    outline: none !important;
+}
 </style>
 </head>
 <body>
@@ -233,8 +240,8 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
     <div class="map-header">
       <span class="panel-title">Punjab Map</span>
       <div class="map-badges">
-        <div class="badge arrived"><span id="b-arrived">0</span><label>Arrived</label></div>
-        <div class="badge target"><span id="b-target">380</span><label>Target</label></div>
+        <div class="badge arrived"><span id="b-arrived">0</span><label>Attended</label></div>
+        <div class="badge target" id="badge-target"><span id="b-target">380</span><label>Target</label></div>
       </div>
     </div>
     <div id="map"></div>
@@ -296,8 +303,8 @@ footer{background:var(--darker);color:#94a3b8;padding:34px 3% 18px;border-top:3p
 <script>
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('keydown', e => {
-    if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'c' || e.key === 'C')) { e.preventDefault(); }
-    if (e.key === 'F12') { e.preventDefault(); }
+  if (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S' || e.key === 'c' || e.key === 'C')) { e.preventDefault(); }
+  if (e.key === 'F12') { e.preventDefault(); }
 });
 
 let currentChartSlide = 0; let chartSlideInterval;
@@ -319,9 +326,6 @@ const palette = ["#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af
 const primaryThemeColor = "#2563eb";
 let defaultBounds = null, districtBoundsMap = {}; 
 
-// =========================================================
-// 🚀 FIXED FILE PATH 
-// =========================================================
 const CSV_URL = 'static/present_data.csv'; 
 
 const BATCH_TARGETS = { 'Batch 1': 32, 'Batch 2': 32, 'Batch 3': 32, 'Batch 4': 32, 'Batch 5': 32, 'Batch 6': 32, 'Batch 7': 32, 'Batch 8': 32, 'Batch 9': 32, 'Batch 10': 32, 'Batch 11': 32, 'Batch 12': 28 };
@@ -329,153 +333,201 @@ const DISTRICT_MAPPING = { "sas nagar": "SAS NAGAR", "s.a.s nagar": "SAS NAGAR",
 
 let globalTeacherData = [];
 
-// Fetches CSV directly. NO popup blockers.
 Papa.parse(CSV_URL, {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-        if(results.data && results.data.length > 0) {
-            processCSV(results.data);
-        }
-        loadDashboard();
-    },
-    error: function(err) {
-        console.error("PapaParse failed to load the CSV file:", err);
-        // It failed, but we load the dashboard anyway with 0s so it doesn't break the page.
-        loadDashboard();
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
+    if(results.data && results.data.length > 0) {
+      processCSV(results.data);
     }
+    loadDashboard();
+  },
+  error: function(err) {
+    console.error("PapaParse failed to load the CSV file:", err);
+    loadDashboard();
+  }
 });
 
 function processCSV(data) {
-    globalTeacherData = data.map((row, idx) => {
-        let dist = row['District'] || '';
-        let mappedDist = DISTRICT_MAPPING[dist.toLowerCase()] || dist.toUpperCase();
-        
-        let batch = row['Batch No'] || row['Batch'] || 'Unknown';
-        if(batch.toLowerCase().startsWith('batch')) batch = 'Batch ' + batch.toLowerCase().replace('batch', '').trim();
-        
-        let gender = row['Gender'] || '';
-        let cleanGender = "Not Specified";
-        if(['M', 'MALE'].includes(gender.toUpperCase())) cleanGender = "Male";
-        if(['F', 'FEMALE'].includes(gender.toUpperCase())) cleanGender = "Female";
+  globalTeacherData = data.map((row, idx) => {
+    let dist = row['District'] || '';
+    let mappedDist = DISTRICT_MAPPING[dist.trim().toLowerCase()] || dist.trim().toUpperCase();
+    
+    let batch = row['Batch No'] || row['Batch'] || 'Unknown';
+    if(batch.toLowerCase().startsWith('batch')) batch = 'Batch ' + batch.toLowerCase().replace('batch', '').trim();
+    
+    let gender = row['Gender'] || '';
+    let cleanGender = "Not Specified";
+    if(['M', 'MALE'].includes(gender.toUpperCase().trim())) cleanGender = "Male";
+    if(['F', 'FEMALE'].includes(gender.toUpperCase().trim())) cleanGender = "Female";
 
-        return {
-            row_id: idx,
-            Batch: batch,
-            District: mappedDist,
-            "School Name": row['School Name'] || 'N/A',
-            Name: row['Name'] || 'UNKNOWN',
-            Designation: row['Designation'] || 'TEACHER',
-            "Udise Code": row['Udise Code'] || 'N/A',
-            Gender: cleanGender
-        };
-    }).filter(d => d.District);
+    return {
+      row_id: idx,
+      Batch: batch,
+      District: mappedDist,
+      "School Name": row['School Name'] || 'N/A',
+      Name: row['Name'] || 'UNKNOWN',
+      Designation: row['Designation'] || 'TEACHER',
+      "Udise Code": row['Udise Code'] || 'N/A',
+      Gender: cleanGender
+    };
+  }).filter(d => d.District);
 }
 
 function resetMap() { document.getElementById('f-district').value = 'All'; loadDashboard(); if(defaultBounds) map.fitBounds(defaultBounds); }
 function applyFilters() { const dist = document.getElementById('f-district').value; loadDashboard(); if(isMobile && dist !== 'All') document.getElementById('table-section').scrollIntoView({behavior: 'smooth', block: 'start'}); }
-function resolve(n) { if(!n) return ""; let c = n.trim().toLowerCase(); if(c.includes("sas")||c.includes("mohali")) return "SAS NAGAR"; if(c.includes("muktsar")) return "MUKTSAR"; if(c.includes("rupnagar")||c.includes("ropar")) return "RUPNAGAR"; if(c.includes("bhagat")||c.includes("nawanshahr")) return "NAWANSHAHR"; if(c.includes("taran")) return "TARN TARAN"; if(c.includes("firozpur")||c.includes("ferozepur")) return "FEROZEPUR"; if(c.includes("fatehgarh")) return "FATEHGARH SAHIB"; return c.toUpperCase(); }
+
+// ULTIMATE VACUUM RESOLVER
+function resolve(n) {
+  if(!n) return "";
+  let c = n.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if(c.includes("sasnagar") || c.includes("mohali") || c.includes("sahibzada")) return "SAS NAGAR";
+  if(c.includes("muktsar")) return "MUKTSAR";
+  if(c.includes("rupnagar") || c.includes("ropar")) return "RUPNAGAR";
+  if(c.includes("nawanshahr") || c.includes("sbs") || c.includes("bhagat")) return "NAWANSHAHR";
+  if(c.includes("tarntaran") || c.includes("tarantaran") || c.includes("tarn")) return "TARN TARAN";
+  if(c.includes("feroz") || c.includes("firoz")) return "FEROZEPUR";
+  if(c.includes("fatehgarh")) return "FATEHGARH SAHIB";
+  return n.trim().toUpperCase();
+}
 
 function loadDashboard() {
-    const batch = document.getElementById('f-batch').value;
-    const currentDist = document.getElementById('f-district').value; 
-    const isIsolated = currentDist !== 'All';
-    labelsLayer.clearLayers(); if(punjabLayer) map.removeLayer(punjabLayer);
-    const resetBtn = document.getElementById('btn-reset'); if(resetBtn) resetBtn.style.display = isIsolated ? 'flex' : 'none';
+  const batch = document.getElementById('f-batch').value;
+  const currentDist = document.getElementById('f-district').value; 
+  const isIsolated = currentDist !== 'All';
+  labelsLayer.clearLayers(); if(punjabLayer) map.removeLayer(punjabLayer);
+  
+  const resetBtn = document.getElementById('btn-reset'); if(resetBtn) resetBtn.style.display = isIsolated ? 'flex' : 'none';
 
-    let arrived = {}, total_arrived = 0, gender_stats = {"Male": 0, "Female": 0, "Not Specified": 0}, designation_stats = {};
-    
-    globalTeacherData.forEach(t => {
-        if (batch === 'All' || t.Batch === batch) {
-            arrived[t.District] = (arrived[t.District] || 0) + 1;
-            total_arrived++;
-            gender_stats[t.Gender]++;
-            if(t.Designation && t.Designation !== 'N/A') {
-                designation_stats[t.Designation] = (designation_stats[t.Designation] || 0) + 1;
-            }
-        }
-    });
+  // FIX: Hide the Target Badge when filtering by a specific district
+  const targetBadge = document.getElementById('badge-target');
+  if (targetBadge) {
+      targetBadge.style.display = isIsolated ? 'none' : '';
+  }
 
-    let expected_total = batch === 'All' ? Object.values(BATCH_TARGETS).reduce((a,b)=>a+b,0) : (BATCH_TARGETS[batch] || 32);
-    document.getElementById('b-target').innerText = expected_total;
-    
-    let sortedDesig = Object.fromEntries(Object.entries(designation_stats).sort(([,a],[,b]) => b - a).slice(0, 5));
-    let statsData = { arrived, total_arrived, expected_total, gender_stats, designation_stats: sortedDesig };
+  // We need TWO tracking objects: one for the map (only filtered by batch), one for the charts (filtered by batch AND district)
+  let mapArrived = {}; 
+  let arrived = {}, total_arrived = 0, gender_stats = {"Male": 0, "Female": 0, "Not Specified": 0}, designation_stats = {};
+  
+  globalTeacherData.forEach(t => {
+    let matchBatch = (batch === 'All' || t.Batch === batch);
+    let matchDist = (currentDist === 'All' || t.District === currentDist);
 
-    fetch('static/punjab_districts.geojson').then(r => r.json()).catch(()=>({features:[]})).then(geo => {
-        if(!geo.features.length) return;
-        punjabLayer = L.geoJSON(geo, {
-            style: (f) => {
-                const csvName = resolve(f.properties.district);
-                const arrCount = statsData.arrived[csvName] || 0;
-                let cCls = arrCount > 0 ? 'clickable-district' : 'non-clickable-district';
-                
-                if(isIsolated) return csvName === currentDist ? {color:"#fff", weight:2, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls} : {color:"transparent", weight:0, fillColor:"transparent", fillOpacity:0, opacity:0, className:'non-clickable-district'};
-                if(arrCount > 0) return {color:"#fff", weight:1.5, fillColor:palette[csvName.charCodeAt(0)%palette.length], fillOpacity:0.95, className:cCls};
-                return {color:"#fff", weight:1.5, fillColor:"#cbd5e1", fillOpacity:0.4, className:cCls}; 
-            },
-            onEachFeature: (f, l) => {
-                const rawName = f.properties.district;
-                const csvName = resolve(rawName); const arrCount = statsData.arrived[csvName] || 0;
-                districtBoundsMap[csvName] = l.getBounds(); 
-                if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${arrCount} Attended </div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
-                if(arrCount > 0) l.on('click', () => { document.getElementById('f-district').value = csvName; applyFilters(); setTimeout(()=>map.fitBounds(districtBoundsMap[csvName]), 50); });
-            }
-        }).addTo(map);
+    // Map needs to know counts regardless of the clicked district
+    if (matchBatch) {
+      mapArrived[t.District] = (mapArrived[t.District] || 0) + 1;
+    }
+
+    // STRICT FILTERING FOR CHARTS AND DASHBOARD STATS
+    if (matchBatch && matchDist) {
+      arrived[t.District] = (arrived[t.District] || 0) + 1;
+      total_arrived++;
+      
+      if(gender_stats[t.Gender] !== undefined) gender_stats[t.Gender]++;
+      else gender_stats['Not Specified']++;
+
+      if(t.Designation && t.Designation !== 'N/A') {
+        designation_stats[t.Designation] = (designation_stats[t.Designation] || 0) + 1;
+      }
+    }
+  });
+
+  let expected_total = batch === 'All' ? Object.values(BATCH_TARGETS).reduce((a,b)=>a+b,0) : (BATCH_TARGETS[batch] || 32);
+  document.getElementById('b-target').innerText = expected_total;
+  
+  let sortedDesig = Object.fromEntries(Object.entries(designation_stats).sort(([,a],[,b]) => b - a).slice(0, 5));
+  
+  // Dashboard charts use STRICT data
+  let statsData = { arrived, total_arrived, expected_total, gender_stats, designation_stats: sortedDesig };
+
+  fetch('static/punjab_districts.geojson').then(r => r.json()).catch(()=>({features:[]})).then(geo => {
+    if(!geo.features.length) return;
+    punjabLayer = L.geoJSON(geo, {
+      style: (f) => {
+        const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2 || "Unknown";
+        const csvName = resolve(rawName);
         
-        document.getElementById('b-arrived').innerText = statsData.total_arrived;
-        document.getElementById('s-total').innerText = statsData.total_arrived;
-        if(!defaultBounds) defaultBounds = punjabLayer.getBounds();
-        if(isIsolated && districtBoundsMap[currentDist]) map.fitBounds(districtBoundsMap[currentDist]);
-        else if(batch === 'All') map.fitBounds(defaultBounds);
+        // Map coloring uses the mapArrived data (filtered only by batch)
+        const arrCount = mapArrived[csvName] || 0;
+        let cCls = arrCount > 0 ? 'clickable-district' : 'non-clickable-district';
+        let colorIndex = csvName ? csvName.charCodeAt(0) % palette.length : 0;
         
-        updateCharts(statsData); 
-        showAdmin(currentDist, batch); 
-    });
+        if(isIsolated) return csvName === currentDist ? {color:"#fff", weight:2, fillColor:palette[colorIndex], fillOpacity:0.95, className:cCls} : {color:"transparent", weight:0, fillColor:"transparent", fillOpacity:0, opacity:0, className:'non-clickable-district'};
+        if(arrCount > 0) return {color:"#fff", weight:1.5, fillColor:palette[colorIndex], fillOpacity:0.95, className:cCls};
+        return {color:"#fff", weight:1.5, fillColor:"#cbd5e1", fillOpacity:0.4, className:cCls}; 
+      },
+      onEachFeature: (f, l) => {
+        const rawName = f.properties.dtname || f.properties.district || f.properties.NAME_2 || "Unknown";
+        const csvName = resolve(rawName); 
+        
+        // Tooltip uses mapArrived data
+        let tooltipCount = mapArrived[csvName] || 0;
+
+        districtBoundsMap[csvName] = l.getBounds(); 
+        if(!isIsolated || currentDist === csvName) l.bindTooltip(`<div style="font-weight:900; font-size:13px; text-transform:uppercase; color:#fbbf24;">${rawName}</div><div style="font-weight:700; font-size:15px; color:#fff;">${tooltipCount} Attended </div>`, {sticky:true, className:'map-tooltip', direction:'top', offset:[0,-10]});
+        if(tooltipCount > 0) l.on('click', () => { document.getElementById('f-district').value = csvName; applyFilters(); setTimeout(()=>map.fitBounds(districtBoundsMap[csvName]), 50); });
+      }
+    }).addTo(map);
+    
+    // Top Stats boxes use STRICT data
+    document.getElementById('b-arrived').innerText = statsData.total_arrived;
+    document.getElementById('s-total').innerText = statsData.total_arrived;
+    if(!defaultBounds) defaultBounds = punjabLayer.getBounds();
+    if(isIsolated && districtBoundsMap[currentDist]) map.fitBounds(districtBoundsMap[currentDist]);
+    else if(batch === 'All') map.fitBounds(defaultBounds);
+    
+    updateCharts(statsData); 
+    showAdmin(currentDist, batch); 
+  });
 }
 
 function showAdmin(name, batch) {
-    document.getElementById('tbl-title').innerText = name === 'All' ? `All Districts` : `${name} District`;
-    document.getElementById('tbl-sub').innerText = `Filter: ${batch}`;
-    
-    let list = globalTeacherData.filter(t => {
-        let matchBatch = (batch === 'All' || t.Batch === batch);
-        let matchDist = (name === 'All' || t.District === name.toUpperCase());
-        return matchBatch && matchDist;
-    });
+  document.getElementById('tbl-title').innerText = name === 'All' ? `All Districts` : `${name} District`;
+  document.getElementById('tbl-sub').innerText = `Filter: ${batch}`;
+  
+  let list = globalTeacherData.filter(t => {
+    let matchBatch = (batch === 'All' || t.Batch === batch);
+    let matchDist = (name === 'All' || t.District === name.toUpperCase());
+    return matchBatch && matchDist;
+  });
 
-    let uSch = new Set(), uDist = new Set(), uBat = new Set();
-    let h = `<table><tr><th class="t-sno">#</th><th>Teacher Details</th><th>UDISE Code</th><th>School Name</th><th>District</th><th>Batch</th></tr>`;
-    
-    if(list.length === 0) {
-        h += `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:50px;">No arrivals recorded.</td></tr>`;
-    } else {
-        list.forEach((t, i) => {
-            const s = t['School Name']||'-', d = t['District']||'-', b = t['Batch']||'-', des = t['Designation']||'', u = t['Udise Code']||'-';
-            if(s!=='-') uSch.add(s); if(d!=='-') uDist.add(d); if(b!=='-') uBat.add(b);
-            h += `<tr><td class="t-sno">${i+1}</td><td><div class="t-name">${t['Name']||'-'}</div>${des ? `<div class="t-desig">${des}</div>`:''}</td><td>${u!=='-'?`<span class="t-udise">${u}</span>`:'-'}</td><td class="t-sch">${s}</td><td style="font-weight:700; color:var(--primary);">${d}</td><td style="color:var(--muted); font-weight:600;">${b}</td></tr>`;
-        });
-    }
-    document.getElementById('table-container').innerHTML = h + `</table>`;
-    document.getElementById('s-shown').innerText = list.length; document.getElementById('s-schools').innerText = uSch.size; document.getElementById('s-districts').innerText = uDist.size; document.getElementById('s-batches').innerText = uBat.size;
-    document.getElementById('ss-total').innerText = batch; document.getElementById('ss-districts').innerText = name==='All'?'Across Punjab':`${name} Only`;
+  let uSch = new Set(), uDist = new Set(), uBat = new Set();
+  let h = `<table><tr><th class="t-sno">#</th><th>Teacher Details</th><th>UDISE Code</th><th>School Name</th><th>District</th><th>Batch</th></tr>`;
+  
+  if(list.length === 0) {
+    h += `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:50px;">No attendance recorded.</td></tr>`;
+  } else {
+    list.forEach((t, i) => {
+      const s = t['School Name']||'-', d = t['District']||'-', b = t['Batch']||'-', des = t['Designation']||'', u = t['Udise Code']||'-';
+      if(s!=='-') uSch.add(s); if(d!=='-') uDist.add(d); if(b!=='-') uBat.add(b);
+      h += `<tr><td class="t-sno">${i+1}</td><td><div class="t-name">${t['Name']||'-'}</div>${des ? `<div class="t-desig">${des}</div>`:''}</td><td>${u!=='-'?`<span class="t-udise">${u}</span>`:'-'}</td><td class="t-sch">${s}</td><td style="font-weight:700; color:var(--primary);">${d}</td><td style="color:var(--muted); font-weight:600;">${b}</td></tr>`;
+    });
+  }
+  document.getElementById('table-container').innerHTML = h + `</table>`;
+  document.getElementById('s-shown').innerText = list.length; document.getElementById('s-schools').innerText = uSch.size; 
+  
+  // LOGIC TO CHECK THE 24 DISTRICTS BUG: Prints the exact list to your console
+  console.log("Districts Found in Data:", Array.from(uDist));
+  
+  document.getElementById('s-districts').innerText = uDist.size; document.getElementById('s-batches').innerText = uBat.size;
+  document.getElementById('ss-total').innerText = batch; document.getElementById('ss-districts').innerText = name==='All'?'Across Punjab':`${name} Only`;
 }
 
 function updateCharts(data) {
-    Chart.defaults.font.family = "'DM Sans', sans-serif";
-    const distLabels = Object.keys(data.arrived || {}).filter(l => data.arrived[l] > 0); const distArr = distLabels.map(l => data.arrived[l]);
-    if(charts.bar) charts.bar.destroy(); const ctx = document.getElementById('barChart').getContext('2d'); const gradient = ctx.createLinearGradient(0,0,0,300); gradient.addColorStop(0, primaryThemeColor); gradient.addColorStop(1, '#60a5fa');
-    charts.bar = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: distLabels, datasets: [{ data: distArr, backgroundColor: gradient, borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 } } }, y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } } } } });
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  const distLabels = Object.keys(data.arrived || {}).filter(l => data.arrived[l] > 0); const distArr = distLabels.map(l => data.arrived[l]);
+  if(charts.bar) charts.bar.destroy(); const ctx = document.getElementById('barChart').getContext('2d'); const gradient = ctx.createLinearGradient(0,0,0,300); gradient.addColorStop(0, primaryThemeColor); gradient.addColorStop(1, '#60a5fa');
+  charts.bar = new Chart(document.getElementById('barChart'), { type: 'bar', data: { labels: distLabels, datasets: [{ data: distArr, backgroundColor: gradient, borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 } } }, y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } } } } });
 
-    const gStats = data.gender_stats || {}; document.getElementById('g-male-count').innerText = gStats['Male']||0; document.getElementById('g-female-count').innerText = gStats['Female']||0;
-    if(charts.pie) charts.pie.destroy(); charts.pie = new Chart(document.getElementById('genderPie'), { type: 'doughnut', data: { labels: ['Male','Female','Other'], datasets: [{ data: [gStats['Male'], gStats['Female'], gStats['Not Specified']], backgroundColor: ["#3b82f6", "#ec4899", "#cbd5e1"], borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
+  const gStats = data.gender_stats || {}; document.getElementById('g-male-count').innerText = gStats['Male']||0; document.getElementById('g-female-count').innerText = gStats['Female']||0;
+  if(charts.pie) charts.pie.destroy(); charts.pie = new Chart(document.getElementById('genderPie'), { type: 'doughnut', data: { labels: ['Male','Female','Other'], datasets: [{ data: [gStats['Male'], gStats['Female'], gStats['Not Specified']], backgroundColor: ["#3b82f6", "#ec4899", "#cbd5e1"], borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } } });
 
-    const desigData = data.designation_stats || {}; if(charts.desig) charts.desig.destroy();
-    charts.desig = new Chart(document.getElementById('desigChart'), { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(desigData), datasets: [{ data: Object.values(desigData), backgroundColor: '#10b981', borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } } } });
+  const desigData = data.designation_stats || {}; if(charts.desig) charts.desig.destroy();
+  charts.desig = new Chart(document.getElementById('desigChart'), { type: 'bar', indexAxis: 'y', data: { labels: Object.keys(desigData), datasets: [{ data: Object.values(desigData), backgroundColor: '#10b981', borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } } } });
 
-    if(charts.target) charts.target.destroy(); let expected = data.expected_total || 1, arrived = data.total_arrived || 0, remaining = expected > arrived ? expected - arrived : 0;
-    charts.target = new Chart(document.getElementById('targetPie'), { type: 'doughnut', data: { labels: ['Arrived', 'Remaining'], datasets: [{ data: [arrived, remaining], backgroundColor: [primaryThemeColor, "#f1f5f9"], borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } } });
+  if(charts.target) charts.target.destroy(); let expected = data.expected_total || 1, arrived = data.total_arrived || 0, remaining = expected > arrived ? expected - arrived : 0;
+  charts.target = new Chart(document.getElementById('targetPie'), { type: 'doughnut', data: { labels: ['Attended', 'Remaining'], datasets: [{ data: [arrived, remaining], backgroundColor: [primaryThemeColor, "#f1f5f9"], borderWidth: 0 }] }, options: { maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } } });
 }
 
 function filterTable() { let input = document.getElementById("search").value.toLowerCase(); let rows = document.querySelector("table")?.getElementsByTagName("tr"); if(!rows) return; for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].innerText.toLowerCase().includes(input) ? "" : "none"; }
