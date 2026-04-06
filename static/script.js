@@ -4,7 +4,9 @@ const map = L.map('map', {
     scrollWheelZoom: false,
     doubleClickZoom: false,
     attributionControl: false
-});function triggerReset() {
+});
+
+function triggerReset() {
     const pass = prompt("Enter Admin Password to Wipe ALL Attendance Data:");
     if (!pass) return;
 
@@ -26,6 +28,21 @@ const map = L.map('map', {
     }
 }
 
+// --- NEW DATA RESOLVER FUNCTION ---
+// This ensures map boundaries perfectly match your database names
+function resolve(n) { 
+    if(!n) return ""; 
+    let c = n.trim().toLowerCase(); 
+    if(c.includes("sas") || c.includes("mohali") || c.includes("sahibzada")) return "MOHALI"; 
+    if(c.includes("muktsar")) return "MUKTSAR"; 
+    if(c.includes("rupnagar") || c.includes("ropar")) return "RUPNAGAR"; 
+    if(c.includes("bhagat") || c.includes("nawanshahr") || c.includes("sbs")) return "NAWANSHAHR"; 
+    if(c.includes("taran") || c.includes("tarn")) return "TARN TARAN"; 
+    if(c.includes("firozpur") || c.includes("ferozepur")) return "FEROZEPUR"; 
+    if(c.includes("fatehgarh")) return "FATEHGARH SAHIB"; 
+    return c.toUpperCase(); 
+}
+
 fetch('/api/district_counts')
     .then(response => response.json())
     .then(districtCounts => {
@@ -43,17 +60,22 @@ fetch('/api/district_counts')
                         };
                     },
                     onEachFeature: function (feature, layer) {
-                        const districtName = feature.properties.dtname;
-                        const count = districtCounts[districtName] || 0;
+                        const rawMapName = feature.properties.dtname;
+                        
+                        // Pass the raw map name through the resolver to match the backend
+                        const resolvedName = resolve(rawMapName); 
+                        const count = districtCounts[resolvedName] || 0;
 
-                        layer.bindTooltip(`<b>${districtName}</b><br>Total Teachers: ${count}`);
+                        // Display the raw map name to the user, but use the correct count
+                        layer.bindTooltip(`<b>${rawMapName}</b><br>Total Teachers: ${count}`);
 
                         layer.on('click', function () {
-                            fetch(`/api/teachers/${districtName}`)
+                            // Use the resolved name to fetch data from the backend
+                            fetch(`/api/teachers/${resolvedName}`)
                                 .then(res => res.json())
                                 .then(teachers => {
                                     const container = document.getElementById('table-container');
-                                    let html = `<h4>Teachers in ${districtName}</h4>`;
+                                    let html = `<h4>Teachers in ${rawMapName}</h4>`;
 
                                     if (teachers.length === 0) {
                                         html += `<p>No data available.</p>`;
