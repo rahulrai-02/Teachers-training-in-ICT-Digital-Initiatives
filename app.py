@@ -10,9 +10,7 @@ app = Flask(__name__)
 # Replace this with the "Raw" URL of your CSV file on GitHub.
 # Example: 'https://raw.githubusercontent.com/username/repo/main/present_data.csv'
 GITHUB_CSV_URL = '' 
-LOCAL_CSV_FILE = 'static/present_data.csv'
-if not os.path.exists(LOCAL_CSV_FILE) and os.path.exists('present_data_n.csv'):
-    LOCAL_CSV_FILE = 'present_data_n.csv'
+LOCAL_CSV_FILE = 'present_data.csv'
 
 BATCH_TARGETS = {
     'Batch 1': 32, 'Batch 2': 32, 'Batch 3': 32, 'Batch 4': 32, 
@@ -38,14 +36,6 @@ DISTRICT_MAPPING = {
 # --- BULLETPROOF DATA PARSER ---
 def normalize_text(text): 
     return ' '.join(str(text).strip().upper().split()) if text else "N/A"
-
-def clean_district(value):
-    district = normalize_text(value)
-    if district in ['N/A', '-', 'UNKNOWN', '']:
-        return None
-    if re.fullmatch(r'\d+', district):
-        return None
-    return DISTRICT_MAPPING.get(district.lower(), district)
 
 def standardize_date(raw_date):
     if not raw_date: return 'Missing Date'
@@ -94,31 +84,31 @@ def get_present_data():
         
         for idx, row in enumerate(reader):
             clean_row = {k.strip().lower(): str(v).strip() for k, v in row.items() if k}
-
+            
+            # --- FIX APPLIED HERE: Stripped invisible spaces (.strip()) ---
             dist_val = clean_row.get('district', '').strip()
-            mapped_dist = clean_district(dist_val)
-            if not mapped_dist:
-                continue
-
+            mapped_dist = DISTRICT_MAPPING.get(dist_val.lower(), dist_val.upper())
+            
             batch_val = clean_row.get('batch no', 'Unknown')
             if batch_val.lower().startswith('batch'): 
                 batch_val = 'Batch ' + batch_val.lower().replace('batch', '').strip()
-
-            teacher_data = {
-                "row_id": str(idx), 
-                "Batch": batch_val, 
-                "Date": standardize_date(clean_row.get('start date', clean_row.get('date', ''))),
-                "District": normalize_text(mapped_dist),
-                "School Name": normalize_text(clean_row.get('school name', clean_row.get('school', 'N/A'))),
-                "Name": normalize_text(clean_row.get('name', clean_row.get('teacher name', 'UNKNOWN'))),
-                "Designation": normalize_text(clean_row.get('designation', 'TEACHER')),
-                "Udise Code": clean_row.get('udise code', clean_row.get('udise', 'N/A'))
-            }
-            # Grab any extra unknown columns dynamically
-            for k, v in row.items():
-                if k and k.strip().lower() not in known_keys: 
-                    teacher_data[k.strip().title()] = str(v).strip()
-            teachers.append(teacher_data)
+            
+            if mapped_dist:
+                teacher_data = {
+                    "row_id": str(idx), 
+                    "Batch": batch_val, 
+                    "Date": standardize_date(clean_row.get('start date', clean_row.get('date', ''))),
+                    "District": normalize_text(mapped_dist),
+                    "School Name": normalize_text(clean_row.get('school name', clean_row.get('school', 'N/A'))),
+                    "Name": normalize_text(clean_row.get('name', clean_row.get('teacher name', 'UNKNOWN'))),
+                    "Designation": normalize_text(clean_row.get('designation', 'TEACHER')),
+                    "Udise Code": clean_row.get('udise code', clean_row.get('udise', 'N/A'))
+                }
+                # Grab any extra unknown columns dynamically
+                for k, v in row.items():
+                    if k and k.strip().lower() not in known_keys: 
+                        teacher_data[k.strip().title()] = str(v).strip()
+                teachers.append(teacher_data)
     except Exception as e: 
         print(f"Parsing Error: {e}")
         
